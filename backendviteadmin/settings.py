@@ -40,9 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # third parties
-    'rest_framework.authtoken',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_python3_ldap',
+    'channels',
 
     # app
     'ws',
@@ -79,7 +80,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backendviteadmin.wsgi.application'
-
+# ASGI
+ASGI_APPLICATION = "backendviteadmin.asgi.application"
+# channel layer
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -132,6 +143,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # use customized user model as authentication
 AUTH_USER_MODEL = 'user.User'
 
@@ -195,6 +207,7 @@ REST_FRAMEWORK = {
     ]
 }
 
+# redirect after login
 LOGIN_REDIRECT_URL = '/api/v1/auth/user'
 
 # JWT config
@@ -229,3 +242,4 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
