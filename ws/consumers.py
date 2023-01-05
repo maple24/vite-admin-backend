@@ -7,9 +7,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         self.room_group_name = "chat_%s" % self.room_name
         # 127.0.0.1 will be considered as anonymous, use localhost
-        if self.scope['user'].is_anonymous:
-            print('AnonymousUser')
-            return AnonymousUser()
+        # if self.scope['user'].is_anonymous:
+        #     print('AnonymousUser')
+        #     print(self.scope['user'])
+        #     return AnonymousUser()
         
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
