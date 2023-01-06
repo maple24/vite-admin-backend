@@ -1,0 +1,18 @@
+{
+    "data": [
+        {
+            "title": "Hello World",
+            "scripts": {
+                "description": "echo 'Hello world'",
+                "expectedResult": "Hello world"
+            }
+        },
+        {
+            "title": "Calculus",
+            "scripts": {
+                "description": "1+1",
+                "expectedResult": "2"
+            }
+        }
+    ]
+}

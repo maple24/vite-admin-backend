@@ -1,6 +1,10 @@
+from pathlib import Path
+import os
+import json
 from utils.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
 from pprint import pprint
 
+CURRENT_DIR = Path(__file__).resolve().parent
 
 def _extractText(field):
     results = []
@@ -41,23 +45,36 @@ def get_script_from_testcase(RQMclient, id: str):
 
     for step in steps:
         stepScript = {}
+        stepScript['description'] = ''
+        stepScript['expectedResult'] = ''
 
         description_field = step.find(
             f'{{{CRQMClient.NAMESPACES["ns8"]}}}description')
-        stepScript['description'] = _extractText(description_field)
+        if description_field is not None:
+            stepScript['description'] = _extractText(description_field)
 
         expectedresults_field = step.find(
             f'{{{CRQMClient.NAMESPACES["ns8"]}}}expectedResult')
-        stepScript['expectedResult'] = _extractText(expectedresults_field)
+        if expectedresults_field is not None:
+            stepScript['expectedResult'] = _extractText(expectedresults_field)
 
         scripts.append(stepScript)
 
     results['scripts'] = scripts
     return results
 
+
+def get_testscript_template():
+    template_path =  os.path.join(CURRENT_DIR, 'template.json')
+    with open(template_path, encoding='utf-8') as f:
+        content = f.readlines()
+    return content
+
+
 if __name__ == '__main__':
-    RQMclient = CRQMClient("ets1szh", "estbangbangde5",
-                        "Zeekr", "https://rb-alm-20-p.de.bosch.com")
-    print("login", RQMclient.login())
-    print(get_script_from_testcase(RQMclient=RQMclient, id=168807))
-    RQMclient.disconnect()
+    # RQMclient = CRQMClient("ets1szh", "estbangbangde5",
+    #                     "Zeekr", "https://rb-alm-20-p.de.bosch.com")
+    # print("login", RQMclient.login())
+    # print(get_script_from_testcase(RQMclient=RQMclient, id=168807))
+    # RQMclient.disconnect()
+    print(get_testscript_template())

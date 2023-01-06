@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.http import FileResponse, HttpResponse
+from django.core.cache import cache
 
 from utils.CRQM.CRQM import CRQMClient
-from utils.CRQM.utils import get_script_from_testcase
-from django.core.cache import cache
+from utils.CRQM.utils import get_script_from_testcase, get_testscript_template
 
 # Create your views here.
 
@@ -56,7 +57,14 @@ def getTestscript(request, id):
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
     cRQM.login()
     results = get_script_from_testcase(RQMclient=cRQM, id=id)
-    cache.set(cache_key, results, 1 * 60 *60) # cache for 1 hour
+    cache.set(cache_key, results, 1 * 60 * 60) # cache for 1 hour
     cRQM.disconnect()
     return Response(results)
 
+
+@api_view(['GET'])
+def downloadTemplate(request):
+    blob = get_testscript_template()
+    file = HttpResponse(blob, content_type='text/plain')
+    file['Content-Disposition'] = "attachment; filename=template.json"
+    return file
