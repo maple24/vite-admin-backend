@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import getAll, getTestscript, downloadTemplate
+from .views import getAll, getTestscript, downloadFile, FileUploadView
 
 urlpatterns = [
     path('allresources/<str:resourceType>', getAll),
     path('testscript/<str:id>', getTestscript),
-    path('template', downloadTemplate)
+    path('download/<str:filename>', downloadFile),
+    path('upload', FileUploadView.as_view())
 ]

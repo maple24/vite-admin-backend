@@ -64,11 +64,16 @@ def get_script_from_testcase(RQMclient, id: str):
     return results
 
 
-def get_testscript_template():
-    template_path =  os.path.join(CURRENT_DIR, 'template.json')
-    with open(template_path, encoding='utf-8') as f:
+def get_file_content(filename):
+    file_path =  os.path.join(CURRENT_DIR, 'source', filename)
+    with open(file_path, encoding='utf-8') as f:
         content = f.readlines()
     return content
+
+
+def create_directory_if_not_exist(dir_path):
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
 
 
 if __name__ == '__main__':
@@ -77,4 +82,4 @@ if __name__ == '__main__':
     # print("login", RQMclient.login())
     # print(get_script_from_testcase(RQMclient=RQMclient, id=168807))
     # RQMclient.disconnect()
-    print(get_testscript_template())
+    print(get_file_content('template.json'))

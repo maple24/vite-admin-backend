@@ -1,11 +1,15 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import FileResponse, HttpResponse
+from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
+from django.http import HttpResponse
 from django.core.cache import cache
+from rest_framework.views import APIView
+from rest_framework.parsers import FileUploadParser
 
 from utils.CRQM.CRQM import CRQMClient
-from utils.CRQM.utils import get_script_from_testcase, get_testscript_template
+from utils.utils import get_script_from_testcase, get_file_content, create_directory_if_not_exist
+from backendviteadmin.settings import MEDIA_ROOT
 
 # Create your views here.
 
@@ -21,7 +25,7 @@ def getAll(request, resourceType):
     cache_key = f'RQM:get_all:{resourceType}'
     cache_value = cache.get(cache_key)
     if cache_value is not None:
-        return Response(cache_value)
+        return Response(cache_value, HTTP_200_OK)
     
     # request results from RQM server
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
@@ -43,7 +47,7 @@ def getAll(request, resourceType):
     results['number'] = len(data)
     cache.set(cache_key, results, 1 * 60 * 60)
     cRQM.disconnect()
-    return Response(results)
+    return Response(results, HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -52,19 +56,32 @@ def getTestscript(request, id):
     cache_key = f'RQM:get_testscript:{id}'
     cache_value = cache.get(cache_key)
     if cache_value is not None:
-        return Response(cache_value)
+        return Response(cache_value, HTTP_200_OK)
     
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
     cRQM.login()
     results = get_script_from_testcase(RQMclient=cRQM, id=id)
-    cache.set(cache_key, results, 1 * 60 * 60) # cache for 1 hour
+    cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
     cRQM.disconnect()
-    return Response(results)
+    return Response(results, HTTP_200_OK)
 
 
 @api_view(['GET'])
-def downloadTemplate(request):
-    blob = get_testscript_template()
+def downloadFile(request, filename):
+    blob = get_file_content(filename)
     file = HttpResponse(blob, content_type='text/plain')
     file['Content-Disposition'] = "attachment; filename=template.json"
     return file
+
+
+class FileUploadView(APIView):
+    parser_classes = [FileUploadParser]
+
+    def post(self, request, format=None):
+        up_file = request.FILES['file']
+        create_directory_if_not_exist(MEDIA_ROOT)
+        with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
+            for chunk in up_file.chunks():
+                destination.write(chunk)
+                
+        return Response(up_file.name, HTTP_201_CREATED)
