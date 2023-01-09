@@ -10,6 +10,7 @@ cffi==1.15.1
 channels==3.0.5
 channels-redis==4.0.0
 charset-normalizer==2.1.1
+colorama==0.4.6
 constantly==15.1.0
 cryptography==38.0.1
 daphne==3.0.2
@@ -27,6 +28,7 @@ idna==3.4
 incremental==21.3.0
 kafka-python==2.0.2
 ldap3==2.9.1
+loguru==0.6.0
 lxml==4.9.2
 msgpack==1.0.4
 outcome==1.2.0
@@ -56,5 +58,6 @@ typing_extensions==4.4.0
 tzdata==2022.2
 urllib3==1.26.13
 websockets==10.3
+win32-setctime==1.1.0
 wsproto==1.2.0
 zope.interface==5.5.0

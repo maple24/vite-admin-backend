@@ -27,18 +27,17 @@
 # 2022-05-20:
 #  -
 # ******************************************************************************
-
+from requests.exceptions import ConnectionError
 import requests
 import os
 from io import BytesIO
 from lxml import etree
 import time
 import urllib.parse
-
+from loguru import logger
 # Disable request warning
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
 #
 #  helper functions for processing xml data
 #
@@ -61,7 +60,7 @@ def get_xml_tree(file_name, bdtd_validation=True):
         oParser = etree.XMLParser(dtd_validation=bdtd_validation)
         oTree = etree.parse(file_name, oParser)
     except Exception as reason:
-        print("Could not parse xml data. Reason: %s" % reason)
+        logger.error("Could not parse xml data. Reason: %s" % reason)
         exit(1)
     return oTree
 
@@ -193,8 +192,12 @@ class CRQMClient():
            True if successful, False otherwise.
         '''
         bSuccess = False
-        res = self.session.post(self.host + '/qm/j_security_check', allow_redirects=True, verify=False,
-                                data={'j_username': self.userID, 'j_password': self.pw})
+        try:
+            res = self.session.post(self.host + '/qm/j_security_check', allow_redirects=True, verify=False,
+                                    data={'j_username': self.userID, 'j_password': self.pw})
+        except ConnectionError as e:
+            logger.error("Proxy error")
+            exit(1)
         if res.status_code == 200:
             # verify login
             if self.verifyProjectName():
@@ -458,6 +461,7 @@ class CRQMClient():
             raise Exception(
                 "Cannot get ID from title. Reason: %s" % str(error))
         return WebID
+
     #
     #  Methods to get resources
     #
@@ -588,7 +592,7 @@ class CRQMClient():
             raise Exception(
                 f"Could not get 'team-areas' of project '{self.projectname}'.")
 
-    def getAllTCERSbasedonTestplanandTestcases(self, tp_id, tc_id):
+    def getTCERbyTPandID(self, tp_id, tc_id):
         """
         filter and returns test case execution record ID based in given
         testplan and test case
@@ -679,7 +683,7 @@ class CRQMClient():
 
     def createTestcaseTemplate(self, testcaseName, sDescription='',
                                sComponent='', sFID='', sTeam='', sRobotFile='',
-                               sTestType='', sASIL='', sOwnerID='', sTCtemplate=None):
+                               sTestType='', sASIL='', sOwnerID='', sTCtemplate=None, sTestscriptID=''):
         '''
         Return testcase template from provided information.
 
@@ -705,12 +709,14 @@ class CRQMClient():
            sTCtemplate (optional) : existing testcase template as xml string.
            If not provided, template file under *templates* is used as default.
 
+           sTestscriptID (optional) : ID of testscript.
+
         Returns:
            xml template as string.
         '''
         if not sTCtemplate:
             sTemplatePath = os.path.join(
-                self.templatesDir, 'executionresult.xml')
+                self.templatesDir, 'testcase.xml')
             oTree = get_xml_tree(sTemplatePath, bdtd_validation=False)
         else:
             oTree = get_xml_tree(
@@ -729,6 +735,12 @@ class CRQMClient():
         # change nodes's data
         oTittle.text = testcaseTittle
         oDescription.text = sDescription
+
+        # link test script
+        oTestscript = oTree.find('ns2:testscript', nsmap)
+        if (oTestscript != None) and sTestscriptID:
+            testscriptURL = self.resourceURL('testscript', sTestscriptID)
+            oTestscript.attrib['href'] = testscriptURL
 
         # Incase not specify owner in template or input data, set it as provided user in cli
         if sOwnerID:
@@ -780,6 +792,75 @@ class CRQMClient():
         # link to provided valid team-area
         if sTeam:
             root = self.addTeamAreaNode(root, sTeam)
+
+        # return xml template as string
+        return etree.tostring(oTree)
+
+    def createTestscriptTemplate(self, testscriptName, sOwnerID='', scripts=None):
+        '''
+        Return testscript template from provided information
+
+        Args:
+           testscriptName : testscript name.
+
+           sOwnerID (optional) : user ID of testcase owner.
+
+           scripts(optional): test steps.
+
+        Returns:
+           xml template as string.
+        '''
+        sTemplatePath = os.path.join(self.templatesDir, 'testscript.xml')
+        oTree = get_xml_tree(sTemplatePath, bdtd_validation=False)
+        root = oTree.getroot()
+        nsmap = root.nsmap
+        testerURL = self.userURL(self.userID)
+
+        # find nodes to change data
+        oTittle = oTree.find('ns4:title', nsmap)
+        oOwner = oTree.find('ns6:owner', nsmap)
+        oSteps = oTree.find('ns2:steps', nsmap)
+
+        if scripts:
+            defaultkeys = {'description', 'expectedResult'}
+            for step in scripts:
+                if defaultkeys != set(step.keys()):
+                    logger.error(f"Keys not correct in {step}")
+                    exit(1)
+                ostep = etree.Element(
+                    "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}step", nsmap=nsmap)
+                ostepDescription = etree.Element(
+                    "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}description", nsmap=nsmap)
+                if not step["description"]:
+                    ostepDescription.text = "<placeholder />"
+                else:
+                    ostepDescription.text = step["description"]
+                ostepExpectedResult = etree.Element(
+                    "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}expectedResult", nsmap=nsmap)
+                ostepExpectedResult.text = step["expectedResult"]
+                ostep.append(ostepDescription)
+                ostep.append(ostepExpectedResult)
+                oSteps.append(ostep)
+        else:
+            ostep = etree.Element(
+                "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}step", nsmap=nsmap)
+            ostepDescription = etree.Element(
+                "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}description", nsmap=nsmap)
+            ostepDescription.text = "<placeholder />"
+            ostep.append(ostepDescription)
+            oSteps.append(ostep)
+
+        # change nodes's data
+        oTittle.text = testscriptName
+
+        # Incase not specify owner in template or input data, set it as provided user in cli
+        if sOwnerID:
+            oOwner.text = sOwnerID
+            oOwner.attrib['{%s}resource' %
+                          nsmap['ns7']] = self.userURL(sOwnerID)
+        elif oOwner.text == None or oOwner.text == '':
+            oOwner.text = self.userID
+            oOwner.attrib['{%s}resource' % nsmap['ns7']] = testerURL
 
         # return xml template as string
         return etree.tostring(oTree)
@@ -942,7 +1023,7 @@ class CRQMClient():
                            'expectedResult', 'actualResult'}
             for step in stepResults:
                 if defaultkeys != set(step.keys()):
-                    print(f"Keys not correct in {step}")
+                    logger.error(f"Keys not correct in {step}")
                     exit(1)
                 ostepResult = etree.Element(
                     "{http://jazz.net/xmlns/alm/qm/v0.1/executionresult/v0.1}stepResult", nsmap=nsmap)
@@ -1227,6 +1308,7 @@ class CRQMClient():
     #  Methods to create RQM resources
     #
     ###########################################################################
+
     def createResource(self, resourceType, content):
         '''
         Create new resource with provided data from template by POST method.
@@ -1409,7 +1491,7 @@ class CRQMClient():
             idx = list(self.dTestsuite.values()).index(sTestsuiteName)
             returnObj['id'] = list(self.dTestsuite.keys())[idx]
             returnObj['status_code'] = "303"
-            returnObj['message'] = "Test suite '%s' is already existing." % sTestsuiteName
+            returnObj['message'] = "Test Suite '%s' is already existing." % sTestsuiteName
         return returnObj
 
     #

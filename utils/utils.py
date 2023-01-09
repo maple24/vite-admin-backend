@@ -1,8 +1,7 @@
 from pathlib import Path
 import os
-import json
+from lxml import etree
 from utils.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
-from pprint import pprint
 
 CURRENT_DIR = Path(__file__).resolve().parent
 
@@ -37,6 +36,11 @@ def get_script_from_testcase(RQMclient, id: str):
 
     testscript = oTree.find('ns2:testscript', nsmap)
     script_id = testscript.attrib['href'].split(':')[-1]
+    testscriptURL = testscript.attrib['href']
+    if len(testscriptURL.split(':')) < 3:
+        script_id = testscriptURL.split('/')[-1]
+    else:
+        script_id = testscriptURL.split(':')[-1]
     # get descriptions and results from scripts
     res = RQMclient.getResourceByID('testscript', script_id).text
     oTree = get_xml_tree(BytesIO(str(res).encode()), bdtd_validation=False)
@@ -62,6 +66,40 @@ def get_script_from_testcase(RQMclient, id: str):
 
     results['scripts'] = scripts
     return results
+
+
+def update_script_from_testcase(RQMclient: object, id: str, data: dict):
+    try:
+        res = RQMclient.getResourceByID('testcase', id).text
+        oTree = get_xml_tree(BytesIO(str(res).encode()), bdtd_validation=False)
+        nsmap = oTree.getroot().nsmap
+        # change testcase title
+        title = oTree.find('ns4:title', nsmap)
+        title.text = data['title']
+        testcaseTemplate = etree.tostring(oTree)
+
+        # find testscript id
+        testscript = oTree.find('ns2:testscript', nsmap)
+        testscriptURL = testscript.attrib['href']
+        if len(testscriptURL.split(':')) < 3:
+            script_id = testscriptURL.split('/')[-1]
+        else:
+            script_id = testscriptURL.split(':')[-1]
+    except:
+        raise Exception('Unable to get testscript id!')
+
+    try:
+        testscriptTemplate = RQMclient.createTestscriptTemplate(
+            testscriptName=f"{data['title']}_script", scripts=data['scripts'])
+    except:
+        raise Exception('Data is not valid!')
+
+    response = RQMclient.updateResourceByID(
+        'testcase', id, testcaseTemplate)
+    response = RQMclient.updateResourceByID(
+        'testscript', script_id, testscriptTemplate)
+
+    return response
 
 
 def get_file_content(filename):
