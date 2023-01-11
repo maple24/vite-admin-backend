@@ -5,14 +5,17 @@ from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_405_METHOD
 from django.http import HttpResponse
 from django.core.cache import cache
 from rest_framework.views import APIView
-from rest_framework.parsers import FileUploadParser
+from rest_framework.parsers import FileUploadParser, MultiPartParser, FormParser
+from loguru import logger
 
 from utils.CRQM.CRQM import CRQMClient
 from utils.utils import (
     get_script_from_testcase, 
     get_file_content, 
     create_directory_if_not_exist,
-    update_script_from_testcase
+    update_script_from_testcase,
+    validateFile,
+    create_testcase_with_testscript
     )
 from backendviteadmin.settings import MEDIA_ROOT
 
@@ -50,12 +53,12 @@ def getAll(request, resourceType):
         item['name'] = value
         results['data'].append(item)
     results['number'] = len(data)
-    cache.set(cache_key, results, 1 * 60 * 60)
+    cache.set(cache_key, results, 4 * 60 * 60)
     cRQM.disconnect()
     return Response(results, HTTP_200_OK)
 
 
-@api_view(['GET', 'PUT'])
+@api_view(['GET', 'PUT', 'POST'])
 def testscript(request, id):
     # retreive data from cache
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
@@ -89,8 +92,12 @@ def testscript(request, id):
                 if item['id'] == id:
                     cache_value['data'][index]['name'] = request.data['title']
                     break
-            cache.set(cache_key, cache_value, 1 * 60 * 60)
+            cache.set(cache_key, cache_value, 4 * 60 * 60)
         cRQM.disconnect()
+        return Response(HTTP_201_CREATED)
+    
+    elif request.method == 'POST':
+        print(request.data)
         return Response(HTTP_201_CREATED)
     
     else:
@@ -106,7 +113,7 @@ def downloadFile(request, filename):
 
 
 class FileUploadView(APIView):
-    parser_classes = [FileUploadParser]
+    parser_classes = [MultiPartParser]
 
     def post(self, request, format=None):
         up_file = request.FILES['file']

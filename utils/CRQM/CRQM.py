@@ -61,7 +61,7 @@ def get_xml_tree(file_name, bdtd_validation=True):
         oTree = etree.parse(file_name, oParser)
     except Exception as reason:
         logger.error("Could not parse xml data. Reason: %s" % reason)
-        exit(1)
+        raise Exception(f"Could not parse xml data. Reason: {reason}")
     return oTree
 
 #
@@ -197,7 +197,7 @@ class CRQMClient():
                                     data={'j_username': self.userID, 'j_password': self.pw})
         except ConnectionError as e:
             logger.error("Proxy error")
-            exit(1)
+            raise Exception("Proxy error")
         if res.status_code == 200:
             # verify login
             if self.verifyProjectName():
@@ -683,7 +683,7 @@ class CRQMClient():
 
     def createTestcaseTemplate(self, testcaseName, sDescription='',
                                sComponent='', sFID='', sTeam='', sRobotFile='',
-                               sTestType='', sASIL='', sOwnerID='', sTCtemplate=None, sTestscriptID=''):
+                               sOwnerID='', sTCtemplate=None, sTestscriptID='', dCategory=''):
         '''
         Return testcase template from provided information.
 
@@ -766,15 +766,56 @@ class CRQMClient():
         if (oCategory != None) and sComponent:
             oCategory.set('value', sComponent)
 
+        if dCategory:
+            try:
+                sFieldAgainst = dCategory['Field Against']
+                sASILrelevant = dCategory['ASIL relevant']
+                sTestType = dCategory['Test Type']
+                sPlannedFor = dCategory['Planned For']
+                sCarline = dCategory['Carline']
+                sExecutionType = dCategory['Execution Type']
+                sTestable = dCategory['Testable']
+                sBRTLevel = dCategory['BRT Level']
+                sTestLevel = dCategory['Test Level']
+            except:
+                logger.error("Key Error, fail to read categories!")
+
+        oFieldAgainst = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Field Against"]', nsmap)
+        if (oFieldAgainst != None) and sFieldAgainst:
+            oFieldAgainst.set('value', sFieldAgainst)
+        oASILrelevant = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="ASIL relevant"]', nsmap)
+        if (oASILrelevant != None) and sASILrelevant:
+            oASILrelevant.set('value', sASILrelevant)
         oTesttype = oTree.find(
             f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Type"]', nsmap)
         if (oTesttype != None) and sTestType:
             oTesttype.set('value', sTestType)
-
-        oASIL = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="ASIL relevant"]', nsmap)
-        if (oASIL != None) and sASIL:
-            oASIL.set('value', sASIL)
+        oPlannedFor = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Planned For"]', nsmap)
+        if (oPlannedFor != None) and sPlannedFor:
+            oPlannedFor.set('value', sPlannedFor)
+        oCarline = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Carline"]', nsmap)
+        if (oCarline != None) and sCarline:
+            oCarline.set('value', sCarline)
+        oExecutionType = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Execution Type"]', nsmap)
+        if (oExecutionType != None) and sExecutionType:
+            oExecutionType.set('value', sExecutionType)
+        oTestable = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Testable"]', nsmap)
+        if (oTestable != None) and sTestable:
+            oTestable.set('value', sTestable)
+        oBRTLevel = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="BRT Level"]', nsmap)
+        if (oBRTLevel != None) and sBRTLevel:
+            oBRTLevel.set('value', sBRTLevel)
+        oTestLevel = oTree.find(
+            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Level"]', nsmap)
+        if (oTestLevel != None) and sTestLevel:
+            oTestLevel.set('value', sTestLevel)
 
         # Modify custom attributes
         oRequirementID = oTree.find(
@@ -826,7 +867,7 @@ class CRQMClient():
             for step in scripts:
                 if defaultkeys != set(step.keys()):
                     logger.error(f"Keys not correct in {step}")
-                    exit(1)
+                    raise Exception(f"Keys not correct in {step}")
                 ostep = etree.Element(
                     "{http://jazz.net/xmlns/alm/qm/v0.1/testscript/v0.1/}step", nsmap=nsmap)
                 ostepDescription = etree.Element(
@@ -1024,7 +1065,7 @@ class CRQMClient():
             for step in stepResults:
                 if defaultkeys != set(step.keys()):
                     logger.error(f"Keys not correct in {step}")
-                    exit(1)
+                    raise Exception(f"Keys not correct in {step}")
                 ostepResult = etree.Element(
                     "{http://jazz.net/xmlns/alm/qm/v0.1/executionresult/v0.1}stepResult", nsmap=nsmap)
                 ostepResult.set(

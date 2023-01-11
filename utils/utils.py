@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from lxml import etree
 from utils.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
+import json
 
 CURRENT_DIR = Path(__file__).resolve().parent
 
@@ -21,6 +22,75 @@ def _extractText(field):
             print("No text found!")
             
     return '\n'.join(results)
+
+
+def _validateJsonTemplate(data):
+    DEFAULTKEYS = {'title', 'scripts'}
+    OPTIONALKEYS = {'category'}
+    STEPKEYS = {'descriptions', 'expectedResults'}
+    CATEGORYKEYS = {
+        'Field Against',
+        'ASIL relevant',
+        'Test Type',
+        'Planned For',
+        'Carline',
+        'Execution Type',
+        'Testable',
+        'BRT Level',
+        'Test Level'
+    }
+    if set(data.keys()) == DEFAULTKEYS:
+        scripts = data['scripts']
+        if isinstance(scripts, list):
+            for step in scripts:
+                if not set(step.keys()) == STEPKEYS:
+                    raise Exception('Invalid scripts keys!')
+        else:
+            raise Exception('Invalid scripts type!')
+    elif set(data.keys()) == DEFAULTKEYS.union(OPTIONALKEYS):
+        scripts = data['scripts']
+        category = data['category']
+        if isinstance(scripts, list):
+            for step in scripts:
+                if not set(step.keys()) == STEPKEYS:
+                    raise Exception('Invalid scripts keys!')
+        else:
+            raise Exception('Invalid script type!')
+        if isinstance(category, dict):
+            keys = set(category.keys())
+            for key in keys:
+                if key not in CATEGORYKEYS:
+                    raise Exception('Invalid category keys')
+        else:
+            raise Exception('Invalid category type!')
+    else:
+        raise Exception('Invalid keys!')
+
+
+def validateFile(file_path):
+    extension = os.path.splitext(file_path)[1]
+    if extension == '.json':
+        try:
+            with open(file_path) as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            raise Exception('File not found!')
+        except json.JSONDecodeError:
+            raise Exception('Invalid Json format!')
+        except:
+            raise Exception('Fail to load file!')
+    else:
+        raise Exception('Invalid file extension!')
+
+    if isinstance(data, list):
+        for case in data:
+            _validateJsonTemplate(case)
+    elif isinstance(data, dict):
+        _validateJsonTemplate(data)
+    else:
+        raise Exception('Invalid data format!')
+
+    return data
 
 
 def get_script_from_testcase(RQMclient, id: str):
@@ -98,6 +168,30 @@ def update_script_from_testcase(RQMclient: object, id: str, data: dict):
         'testcase', id, testcaseTemplate)
     response = RQMclient.updateResourceByID(
         'testscript', script_id, testscriptTemplate)
+
+    return response
+
+
+def create_testcase_with_testscript(RQMclient: object, data: dict):
+    # create testscript
+    try:
+        testscriptTemplate = RQMclient.createTestscriptTemplate(
+            testscriptName=f"{data['title']}_script", scripts=data['scripts'])
+    except:
+        raise Exception('Data is not valid!')
+    result = RQMclient.createResource('testscript', testscriptTemplate)
+
+    # create testcase and link testscript to testcase
+    # there has to be a whitespace right after functional in Test Type
+    testscriptID = result['id']
+    if 'category' not in data:
+        data['category'] = None
+    try:
+        testcaseTemplate = RQMclient.createTestcaseTemplate(
+            testcaseName=data['title'], sTestscriptID=testscriptID, dCategory=data['category'])
+    except:
+        raise Exception('Data is not valid!')
+    response = RQMclient.createResource('testcase', testcaseTemplate)
 
     return response
 

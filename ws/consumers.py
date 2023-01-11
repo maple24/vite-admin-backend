@@ -11,7 +11,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         #     print('AnonymousUser')
         #     print(self.scope['user'])
         #     return AnonymousUser()
-        
+        print(self.scope)
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
