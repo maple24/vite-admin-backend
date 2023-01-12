@@ -186,15 +186,34 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
         "console": {
             "class": "logging.StreamHandler",
         },
+    },
+    'root': {
+    'handlers': ['console'],
+    'level': 'WARNING',
     },
     "loggers": {
         "django_python3_ldap": {
             "handlers": ["console"],
             "level": "INFO",
         },
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'ws.consumers': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False, 
+        }
     },
 }
 

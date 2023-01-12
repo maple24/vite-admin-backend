@@ -768,54 +768,54 @@ class CRQMClient():
 
         if dCategory:
             try:
-                sFieldAgainst = dCategory['Field Against']
-                sASILrelevant = dCategory['ASIL relevant']
-                sTestType = dCategory['Test Type']
-                sPlannedFor = dCategory['Planned For']
-                sCarline = dCategory['Carline']
-                sExecutionType = dCategory['Execution Type']
-                sTestable = dCategory['Testable']
-                sBRTLevel = dCategory['BRT Level']
-                sTestLevel = dCategory['Test Level']
+                sFieldAgainst = dCategory.get('Field Against', None)
+                sASILrelevant = dCategory.get('ASIL relevant', None)
+                sTestType = dCategory.get('Test Type', None)
+                sPlannedFor = dCategory.get('Planned For', None)
+                sCarline = dCategory.get('Carline', None)
+                sExecutionType = dCategory.get('Execution Type', None)
+                sTestable = dCategory.get('Testable', None)
+                sBRTLevel = dCategory.get('BRT Level', None)
+                sTestLevel = dCategory.get('Test Level', None)
             except:
                 logger.error("Key Error, fail to read categories!")
-
-        oFieldAgainst = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Field Against"]', nsmap)
-        if (oFieldAgainst != None) and sFieldAgainst:
-            oFieldAgainst.set('value', sFieldAgainst)
-        oASILrelevant = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="ASIL relevant"]', nsmap)
-        if (oASILrelevant != None) and sASILrelevant:
-            oASILrelevant.set('value', sASILrelevant)
-        oTesttype = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Type"]', nsmap)
-        if (oTesttype != None) and sTestType:
-            oTesttype.set('value', sTestType)
-        oPlannedFor = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Planned For"]', nsmap)
-        if (oPlannedFor != None) and sPlannedFor:
-            oPlannedFor.set('value', sPlannedFor)
-        oCarline = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Carline"]', nsmap)
-        if (oCarline != None) and sCarline:
-            oCarline.set('value', sCarline)
-        oExecutionType = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Execution Type"]', nsmap)
-        if (oExecutionType != None) and sExecutionType:
-            oExecutionType.set('value', sExecutionType)
-        oTestable = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Testable"]', nsmap)
-        if (oTestable != None) and sTestable:
-            oTestable.set('value', sTestable)
-        oBRTLevel = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="BRT Level"]', nsmap)
-        if (oBRTLevel != None) and sBRTLevel:
-            oBRTLevel.set('value', sBRTLevel)
-        oTestLevel = oTree.find(
-            f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Level"]', nsmap)
-        if (oTestLevel != None) and sTestLevel:
-            oTestLevel.set('value', sTestLevel)
+            else:
+                oFieldAgainst = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Field Against"]', nsmap)
+                if (oFieldAgainst != None) and sFieldAgainst:
+                    oFieldAgainst.set('value', sFieldAgainst)
+                oASILrelevant = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="ASIL relevant"]', nsmap)
+                if (oASILrelevant != None) and sASILrelevant:
+                    oASILrelevant.set('value', sASILrelevant)
+                oTesttype = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Type"]', nsmap)
+                if (oTesttype != None) and sTestType:
+                    oTesttype.set('value', sTestType)
+                oPlannedFor = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Planned For"]', nsmap)
+                if (oPlannedFor != None) and sPlannedFor:
+                    oPlannedFor.set('value', sPlannedFor)
+                oCarline = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Carline"]', nsmap)
+                if (oCarline != None) and sCarline:
+                    oCarline.set('value', sCarline)
+                oExecutionType = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Execution Type"]', nsmap)
+                if (oExecutionType != None) and sExecutionType:
+                    oExecutionType.set('value', sExecutionType)
+                oTestable = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Testable"]', nsmap)
+                if (oTestable != None) and sTestable:
+                    oTestable.set('value', sTestable)
+                oBRTLevel = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="BRT Level"]', nsmap)
+                if (oBRTLevel != None) and sBRTLevel:
+                    oBRTLevel.set('value', sBRTLevel)
+                oTestLevel = oTree.find(
+                    f'{{{self.NAMESPACES["ns2"]}}}category[@term="Test Level"]', nsmap)
+                if (oTestLevel != None) and sTestLevel:
+                    oTestLevel.set('value', sTestLevel)
 
         # Modify custom attributes
         oRequirementID = oTree.find(

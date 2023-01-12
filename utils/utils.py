@@ -1,8 +1,9 @@
 from pathlib import Path
 import os
 from lxml import etree
-from utils.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
 import json
+from concurrent.futures import ThreadPoolExecutor
+from utils.lib.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
 
 CURRENT_DIR = Path(__file__).resolve().parent
 
@@ -24,10 +25,10 @@ def _extractText(field):
     return '\n'.join(results)
 
 
-def _validateJsonTemplate(data):
+def validateJsonTemplate(data):
     DEFAULTKEYS = {'title', 'scripts'}
     OPTIONALKEYS = {'category'}
-    STEPKEYS = {'descriptions', 'expectedResults'}
+    STEPKEYS = {'description', 'expectedResult'}
     CATEGORYKEYS = {
         'Field Against',
         'ASIL relevant',
@@ -44,27 +45,29 @@ def _validateJsonTemplate(data):
         if isinstance(scripts, list):
             for step in scripts:
                 if not set(step.keys()) == STEPKEYS:
-                    raise Exception('Invalid scripts keys!')
+                    return {'error': 'Invalid scripts keys!'}
         else:
-            raise Exception('Invalid scripts type!')
+            return {'error': 'Invalid scripts type, should be a list!'}
     elif set(data.keys()) == DEFAULTKEYS.union(OPTIONALKEYS):
         scripts = data['scripts']
         category = data['category']
         if isinstance(scripts, list):
             for step in scripts:
                 if not set(step.keys()) == STEPKEYS:
-                    raise Exception('Invalid scripts keys!')
+                    return {'error': 'Invalid scripts keys!'}
         else:
-            raise Exception('Invalid script type!')
+            return {'error': 'Invalid scripts type!'}
         if isinstance(category, dict):
             keys = set(category.keys())
             for key in keys:
                 if key not in CATEGORYKEYS:
-                    raise Exception('Invalid category keys')
+                    return {'error': 'Invalid category keys!'}
         else:
-            raise Exception('Invalid category type!')
+            return {'error': 'Invalid category type, should be a dictionary!'}
     else:
-        raise Exception('Invalid keys!')
+        return {'error': 'Invalid keys!'}
+    
+    return True
 
 
 def validateFile(file_path):
@@ -81,14 +84,6 @@ def validateFile(file_path):
             raise Exception('Fail to load file!')
     else:
         raise Exception('Invalid file extension!')
-
-    if isinstance(data, list):
-        for case in data:
-            _validateJsonTemplate(case)
-    elif isinstance(data, dict):
-        _validateJsonTemplate(data)
-    else:
-        raise Exception('Invalid data format!')
 
     return data
 
@@ -172,27 +167,35 @@ def update_script_from_testcase(RQMclient: object, id: str, data: dict):
     return response
 
 
-def create_testcase_with_testscript(RQMclient: object, data: dict):
+def create_testcases(RQMclient: object, data: list):
+    RQMclients = [RQMclient]*len(data)
+    with ThreadPoolExecutor() as executor:
+        response = executor.map(create_one_testcase, RQMclients, data)
+    results = []
+    for res in response:
+        results.append(res)
+        
+    return results
+
+
+def create_one_testcase(RQMclient: object, data: dict):
     # create testscript
-    try:
-        testscriptTemplate = RQMclient.createTestscriptTemplate(
+    testscriptTemplate = RQMclient.createTestscriptTemplate(
             testscriptName=f"{data['title']}_script", scripts=data['scripts'])
-    except:
-        raise Exception('Data is not valid!')
     result = RQMclient.createResource('testscript', testscriptTemplate)
+    if result['success']:
+        # create testcase and link testscript to testcase
+        # there has to be a whitespace right after functional in Test Type
+        testscriptID = result['id']
+        if 'category' not in data:
+            data['category'] = None
 
-    # create testcase and link testscript to testcase
-    # there has to be a whitespace right after functional in Test Type
-    testscriptID = result['id']
-    if 'category' not in data:
-        data['category'] = None
-    try:
         testcaseTemplate = RQMclient.createTestcaseTemplate(
-            testcaseName=data['title'], sTestscriptID=testscriptID, dCategory=data['category'])
-    except:
-        raise Exception('Data is not valid!')
-    response = RQMclient.createResource('testcase', testcaseTemplate)
-
+                testcaseName=data['title'], sTestscriptID=testscriptID, dCategory=data['category'])
+        response = RQMclient.createResource('testcase', testcaseTemplate)
+    else:
+        return result
+    
     return response
 
 

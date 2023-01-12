@@ -1,21 +1,29 @@
 from django.shortcuts import render
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes, action
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED, HTTP_405_METHOD_NOT_ALLOWED
+from rest_framework.status import (
+    HTTP_200_OK, 
+    HTTP_201_CREATED, 
+    HTTP_405_METHOD_NOT_ALLOWED, 
+    HTTP_400_BAD_REQUEST,
+    )
 from django.http import HttpResponse
 from django.core.cache import cache
 from rest_framework.views import APIView
-from rest_framework.parsers import FileUploadParser, MultiPartParser, FormParser
+from rest_framework.parsers import FileUploadParser, MultiPartParser, JSONParser
+from rest_framework import viewsets
 from loguru import logger
 
-from utils.CRQM.CRQM import CRQMClient
+from utils.lib.CRQM.CRQM import CRQMClient
 from utils.utils import (
     get_script_from_testcase, 
     get_file_content, 
     create_directory_if_not_exist,
     update_script_from_testcase,
     validateFile,
-    create_testcase_with_testscript
+    validateJsonTemplate,
+    create_testcases,
+    create_one_testcase
     )
 from backendviteadmin.settings import MEDIA_ROOT
 
@@ -58,30 +66,68 @@ def getAll(request, resourceType):
     return Response(results, HTTP_200_OK)
 
 
-@api_view(['GET', 'PUT', 'POST'])
-def testscript(request, id):
-    # retreive data from cache
+class TestscriptViewSet(viewsets.ViewSet):
+    
+    parser_classes = [JSONParser, MultiPartParser]
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
+    
+    def list(self, request):
+        
+        return Response(HTTP_200_OK)
 
-    if request.method == 'GET':
-        cache_key = f'RQM:get_testscript:{id}'
+    def create(self, request):
+        if 'file' in request.FILES:
+            # deal with file
+            up_file = request.FILES['file']
+            create_directory_if_not_exist(MEDIA_ROOT)
+            with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
+                for chunk in up_file.chunks():
+                    destination.write(chunk)
+            data = validateFile(MEDIA_ROOT + up_file.name)
+
+        else:
+            data = request.data
+        
+        # validate data    
+        if isinstance(data, list):
+            for case in data:
+                res = validateJsonTemplate(case)
+                if res is not True:
+                    return Response(res, HTTP_400_BAD_REQUEST)
+        elif isinstance(data, dict):
+            res = validateJsonTemplate(data)
+            if res is not True:
+                return Response(res, HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid data format!'}, HTTP_400_BAD_REQUEST)
+        self.validate(request)
+        self.cRQM.login()
+        if isinstance(data, list): 
+            response = create_testcases(RQMclient=self.cRQM, data=data)
+        else:
+            response = create_one_testcase(RQMclient=self.cRQM, data=data)
+        self.cRQM.disconnect()
+        return Response(response)
+
+    def retrieve(self, request, pk=None):
+        cache_key = f'RQM:get_testscript:{pk}'
         cache_value = cache.get(cache_key)
         if cache_value is not None:
             return Response(cache_value, HTTP_200_OK)
         
-        cRQM.login()
-        results = get_script_from_testcase(RQMclient=cRQM, id=id)
+        self.cRQM.login()
+        results = get_script_from_testcase(RQMclient=self.cRQM, id=pk)
         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
-        cRQM.disconnect()
+        self.cRQM.disconnect()
         return Response(results, HTTP_200_OK)
-    
-    elif request.method == 'PUT':
-        cRQM.login()    
-        _ = update_script_from_testcase(RQMclient=cRQM, id=id, data=request.data)
+
+    def update(self, request, pk=None):
+        self.cRQM.login()    
+        _ = update_script_from_testcase(RQMclient=self.cRQM, id=pk, data=request.data)
         
         # restore testscript cache
-        cache_key = f'RQM:get_testscript:{id}'
-        results = get_script_from_testcase(RQMclient=cRQM, id=id)
+        cache_key = f'RQM:get_testscript:{pk}'
+        results = get_script_from_testcase(RQMclient=self.cRQM, id=pk)
         cache.set(cache_key, results, 24 * 60 * 60)
 
         # change testcase cache
@@ -89,19 +135,96 @@ def testscript(request, id):
         cache_value = cache.get(cache_key)
         if cache_value is not None:
             for index, item in enumerate(cache_value['data']):
-                if item['id'] == id:
+                if item['id'] == pk:
                     cache_value['data'][index]['name'] = request.data['title']
                     break
             cache.set(cache_key, cache_value, 4 * 60 * 60)
-        cRQM.disconnect()
+        self.cRQM.disconnect()
         return Response(HTTP_201_CREATED)
+
+    @action(['POST'], detail=False)
+    def validate(self, request):
+        if 'file' in request.FILES:
+            # deal with file
+            up_file = request.FILES['file']
+            create_directory_if_not_exist(MEDIA_ROOT)
+            with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
+                for chunk in up_file.chunks():
+                    destination.write(chunk)
+            data = validateFile(MEDIA_ROOT + up_file.name)
+        else:
+            data = request.data
+        
+        # validate data    
+        if isinstance(data, list):
+            for case in data:
+                res = validateJsonTemplate(case)
+                if res is not True:
+                    return Response(res, HTTP_400_BAD_REQUEST)
+        elif isinstance(data, dict):
+            res = validateJsonTemplate(data)
+            if res is not True:
+                return Response(res, HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Invalid data format!'}, HTTP_400_BAD_REQUEST)
+        
+        return Response({'success': 'PASSED!', 'data': data}, HTTP_201_CREATED)
     
-    elif request.method == 'POST':
-        print(request.data)
-        return Response(HTTP_201_CREATED)
+    def partial_update(self, request, pk=None):
+        pass
+
+    def destroy(self, request, pk=None):
+        pass
+
+
+# @api_view(['GET', 'PUT', 'POST'])
+# @parser_classes([JSONParser, MultiPartParser])
+# def testscript(request, id):
+#     # retreive data from cache
+#     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
+
+#     if request.method == 'GET':
+#         cache_key = f'RQM:get_testscript:{id}'
+#         cache_value = cache.get(cache_key)
+#         if cache_value is not None:
+#             return Response(cache_value, HTTP_200_OK)
+        
+#         cRQM.login()
+#         results = get_script_from_testcase(RQMclient=cRQM, id=id)
+#         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
+#         cRQM.disconnect()
+#         return Response(results, HTTP_200_OK)
     
-    else:
-        return Response(HTTP_405_METHOD_NOT_ALLOWED)
+#     elif request.method == 'PUT':
+#         cRQM.login()    
+#         _ = update_script_from_testcase(RQMclient=cRQM, id=id, data=request.data)
+        
+#         # restore testscript cache
+#         cache_key = f'RQM:get_testscript:{id}'
+#         results = get_script_from_testcase(RQMclient=cRQM, id=id)
+#         cache.set(cache_key, results, 24 * 60 * 60)
+
+#         # change testcase cache
+#         cache_key = 'RQM:get_all:testcase'
+#         cache_value = cache.get(cache_key)
+#         if cache_value is not None:
+#             for index, item in enumerate(cache_value['data']):
+#                 if item['id'] == id:
+#                     cache_value['data'][index]['name'] = request.data['title']
+#                     break
+#             cache.set(cache_key, cache_value, 4 * 60 * 60)
+#         cRQM.disconnect()
+#         return Response(HTTP_201_CREATED)
+    
+#     elif request.method == 'POST':
+#         # up_file = request.FILES['file']
+#         # for chunk in up_file.chunks():
+#         #     print(chunk)
+#         print(request.data)
+#         return Response(HTTP_201_CREATED)
+    
+#     else:
+#         return Response(HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET'])

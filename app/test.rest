@@ -1,0 +1,8 @@
+POST http://localhost:8000/api/rqm/testscript/
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjczNDk5NzE1LCJpYXQiOjE2NzM0MTMzMTUsImp0aSI6ImUzOTU0MWI1YWM1NzQzMWNhYmMzYzAxN2IzNzM4NTYzIiwidXNlcl9pZCI6MX0.0vB4yPmFdm0Cu7QehXmjAH3ewrcBkcgnyhYZXslPT7c
+content-type: application/json
+
+{
+    "name": "sample",
+    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+}

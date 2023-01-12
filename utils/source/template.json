@@ -1,18 +1,46 @@
-{
-    "data": [
-        {
-            "title": "Hello World",
-            "scripts": {
+[
+    {
+        "title": "Hello World",
+        "category": {
+            "Field Against": "BaseSoftware",
+            "ASIL relevant": "QM",
+            "Test Type": "Functional ",
+            "Planned For": "Sprint00",
+            "Carline": "CS1E",
+            "Execution Type": "Manual",
+            "Testable": "Yes",
+            "BRT Level": "D",
+            "Test Level": "BRT"
+        },
+        "scripts": [
+            {
                 "description": "echo 'Hello world'",
                 "expectedResult": "Hello world"
             }
+        ]
+    },
+    {
+        "title": "Calculus",
+        "category": {
+            "Field Against": "BaseSoftware",
+            "ASIL relevant": "QM",
+            "Test Type": "Functional ",
+            "Planned For": "Sprint00",
+            "Carline": "CS1E",
+            "Execution Type": "Manual",
+            "Testable": "Yes",
+            "BRT Level": "D",
+            "Test Level": "BRT"
         },
-        {
-            "title": "Calculus",
-            "scripts": {
+        "scripts": [
+            {
                 "description": "1+1",
                 "expectedResult": "2"
+            },
+            {
+                "description": "2+2",
+                "expectedResult": "4"
             }
-        }
-    ]
-}
+        ]
+    }
+]
