@@ -91,6 +91,7 @@ def validateFile(file_path):
 def get_script_from_testcase(RQMclient, id: str):
     results = {}
     scripts = []
+    RQMclient.login()
 
     # get testscript id and title
     res = RQMclient.getResourceByID('testcase', id).text
@@ -130,10 +131,13 @@ def get_script_from_testcase(RQMclient, id: str):
         scripts.append(stepScript)
 
     results['scripts'] = scripts
+    RQMclient.disconnect()
     return results
 
 
 def update_script_from_testcase(RQMclient: object, id: str, data: dict):
+    RQMclient.login()
+    
     try:
         res = RQMclient.getResourceByID('testcase', id).text
         oTree = get_xml_tree(BytesIO(str(res).encode()), bdtd_validation=False)
@@ -163,7 +167,8 @@ def update_script_from_testcase(RQMclient: object, id: str, data: dict):
         'testcase', id, testcaseTemplate)
     response = RQMclient.updateResourceByID(
         'testscript', script_id, testscriptTemplate)
-
+    
+    RQMclient.disconnect()
     return response
 
 
@@ -179,6 +184,7 @@ def create_testcases(RQMclient: object, data: list):
 
 
 def create_one_testcase(RQMclient: object, data: dict):
+    RQMclient.login()
     # create testscript
     testscriptTemplate = RQMclient.createTestscriptTemplate(
             testscriptName=f"{data['title']}_script", scripts=data['scripts'])
@@ -196,6 +202,7 @@ def create_one_testcase(RQMclient: object, data: dict):
     else:
         return result
     
+    RQMclient.disconnect()
     return response
 
 

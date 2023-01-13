@@ -76,37 +76,39 @@ class TestscriptViewSet(viewsets.ViewSet):
         return Response(HTTP_200_OK)
 
     def create(self, request):
-        if 'file' in request.FILES:
-            # deal with file
-            up_file = request.FILES['file']
-            create_directory_if_not_exist(MEDIA_ROOT)
-            with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
-                for chunk in up_file.chunks():
-                    destination.write(chunk)
-            data = validateFile(MEDIA_ROOT + up_file.name)
+        data = request.data
 
-        else:
-            data = request.data
-        
-        # validate data    
-        if isinstance(data, list):
-            for case in data:
-                res = validateJsonTemplate(case)
-                if res is not True:
-                    return Response(res, HTTP_400_BAD_REQUEST)
-        elif isinstance(data, dict):
-            res = validateJsonTemplate(data)
-            if res is not True:
-                return Response(res, HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'error': 'Invalid data format!'}, HTTP_400_BAD_REQUEST)
-        self.validate(request)
-        self.cRQM.login()
+        # create testcase
         if isinstance(data, list): 
             response = create_testcases(RQMclient=self.cRQM, data=data)
         else:
             response = create_one_testcase(RQMclient=self.cRQM, data=data)
-        self.cRQM.disconnect()
+            
+        # add into cache
+        cache_key = 'RQM:get_all:testcase'
+        cache_value = cache.get(cache_key)
+        if cache_value is not None:
+            if isinstance(response, list):
+                for res, dat  in zip(response, data):
+                    if res['success']:
+                        cache_value['data'].append(
+                            {
+                                "id": res['id'],
+                                "name": dat['title']
+                            }
+                        )
+                        cache_value['number'] += 1
+            else:
+                if response['success']:
+                    cache_value['data'].append(
+                        {
+                            "id": response['id'],
+                            "name": data['title']
+                        }
+                    )
+                    cache_value['number'] += 1
+            cache.set(cache_key, cache_value, 4 * 60 * 60)
+        
         return Response(response)
 
     def retrieve(self, request, pk=None):
@@ -115,19 +117,16 @@ class TestscriptViewSet(viewsets.ViewSet):
         if cache_value is not None:
             return Response(cache_value, HTTP_200_OK)
         
-        self.cRQM.login()
         results = get_script_from_testcase(RQMclient=self.cRQM, id=pk)
         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
-        self.cRQM.disconnect()
         return Response(results, HTTP_200_OK)
 
     def update(self, request, pk=None):
-        self.cRQM.login()    
         _ = update_script_from_testcase(RQMclient=self.cRQM, id=pk, data=request.data)
         
         # restore testscript cache
         cache_key = f'RQM:get_testscript:{pk}'
-        results = get_script_from_testcase(RQMclient=self.cRQM, id=pk)
+        results = request.data
         cache.set(cache_key, results, 24 * 60 * 60)
 
         # change testcase cache
@@ -139,7 +138,6 @@ class TestscriptViewSet(viewsets.ViewSet):
                     cache_value['data'][index]['name'] = request.data['title']
                     break
             cache.set(cache_key, cache_value, 4 * 60 * 60)
-        self.cRQM.disconnect()
         return Response(HTTP_201_CREATED)
 
     @action(['POST'], detail=False)
