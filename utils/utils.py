@@ -187,7 +187,7 @@ def create_one_testcase(RQMclient: object, data: dict):
     RQMclient.login()
     # create testscript
     testscriptTemplate = RQMclient.createTestscriptTemplate(
-            testscriptName=f"{data['title']}_script", scripts=data['scripts'])
+            testscriptName=f"{data['title']} script", scripts=data['scripts'])
     result = RQMclient.createResource('testscript', testscriptTemplate)
     if result['success']:
         # create testcase and link testscript to testcase
