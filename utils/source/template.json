@@ -1,17 +1,6 @@
 [
     {
         "title": "Hello World",
-        "category": {
-            "Field Against": "BaseSoftware",
-            "ASIL relevant": "QM",
-            "Test Type": "Functional ",
-            "Planned For": "Sprint00",
-            "Carline": "CS1E",
-            "Execution Type": "Manual",
-            "Testable": "Yes",
-            "BRT Level": "D",
-            "Test Level": "BRT"
-        },
         "scripts": [
             {
                 "description": "echo 'Hello world'",
