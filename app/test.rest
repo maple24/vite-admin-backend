@@ -1,4 +1,4 @@
-POST http://localhost:8000/api/rqm/testscript/
+POST http://localhost:8000/api/v1/app/testscript/
 Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjczNDk5NzE1LCJpYXQiOjE2NzM0MTMzMTUsImp0aSI6ImUzOTU0MWI1YWM1NzQzMWNhYmMzYzAxN2IzNzM4NTYzIiwidXNlcl9pZCI6MX0.0vB4yPmFdm0Cu7QehXmjAH3ewrcBkcgnyhYZXslPT7c
 content-type: application/json
 

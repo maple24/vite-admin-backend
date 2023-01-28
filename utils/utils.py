@@ -208,9 +208,19 @@ def create_one_testcase(RQMclient: object, data: dict):
 
 def get_file_content(filename):
     file_path =  os.path.join(CURRENT_DIR, 'source', filename)
+    if not os.path.exists(file_path):
+        return
     with open(file_path, encoding='utf-8') as f:
         content = f.readlines()
     return content
+
+
+def delete_file(filename):
+    file_path =  os.path.join(CURRENT_DIR, 'source', filename)
+    if not os.path.exists(file_path):
+        return
+    os.remove(file_path)
+    return filename
 
 
 def create_directory_if_not_exist(dir_path):

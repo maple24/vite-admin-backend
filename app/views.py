@@ -6,6 +6,7 @@ from rest_framework.status import (
     HTTP_201_CREATED, 
     HTTP_405_METHOD_NOT_ALLOWED, 
     HTTP_400_BAD_REQUEST,
+    HTTP_204_NO_CONTENT
     )
 from django.http import HttpResponse
 from django.core.cache import cache
@@ -18,6 +19,7 @@ from utils.lib.CRQM.CRQM import CRQMClient
 from utils.utils import (
     get_script_from_testcase, 
     get_file_content, 
+    delete_file, 
     create_directory_if_not_exist,
     update_script_from_testcase,
     validateFile,
@@ -233,7 +235,7 @@ def downloadFile(request, filename):
     return file
 
 
-class FileUploadView(APIView):
+class FileView(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request, format=None):
@@ -242,5 +244,20 @@ class FileUploadView(APIView):
         with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
             for chunk in up_file.chunks():
                 destination.write(chunk)
-                
         return Response(up_file.name, HTTP_201_CREATED)
+    
+    def get(self, request, filename):
+        blob = get_file_content(filename)
+        if blob:
+            file = HttpResponse(blob, content_type='text/plain')
+            file['Content-Disposition'] = f"attachment; filename={filename}"
+            return file
+        else:
+            return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, filename):
+        del_file = delete_file(filename)
+        if del_file:
+            return Response(HTTP_204_NO_CONTENT)
+        else:
+            return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)

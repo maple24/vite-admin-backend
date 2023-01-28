@@ -3,7 +3,7 @@ from rest_framework import routers
 from .views import (
     getAll, 
     downloadFile, 
-    FileUploadView,
+    FileView,
     TestscriptViewSet
     )
 
@@ -14,5 +14,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('allresources/<str:resourceType>', getAll),
     path('download/<str:filename>', downloadFile),
-    path('upload', FileUploadView.as_view()),
+    path('file/<str:filename>', FileView.as_view()),
 ]
