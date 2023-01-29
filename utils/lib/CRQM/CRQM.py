@@ -456,7 +456,11 @@ class CRQMClient():
             oResData = get_xml_tree(BytesIO(str(resData.text).encode()),
                                     bdtd_validation=False)
             nsmap = oResData.getroot().nsmap
-            WebID = oResData.find('entry/id', nsmap).text.split(":")[-1]
+            resourceURL = oResData.find('entry/id', nsmap).text
+            if len(resourceURL.split(':')) < 3:
+                WebID = resourceURL.split('/')[-1]
+            else:
+                WebID = resourceURL.split(':')[-1]
         except Exception as error:
             raise Exception(
                 "Cannot get ID from title. Reason: %s" % str(error))
