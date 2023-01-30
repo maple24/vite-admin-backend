@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'django_python3_ldap',
     'channels',
 
-    # app
+    # apps
     'ws',
     'user',
     'app'
@@ -155,6 +155,15 @@ AUTH_USER_MODEL = 'user.User'
 
 
 # LDAP config
+# AUTHENTICATION_BACKENDS = (
+#     "social_core.backends.github.GithubOAuth2",
+#     "social_core.backends.twitter.TwitterOAuth",
+#     "social_core.backends.facebook.FacebookOAuth2",
+#     "social_core.backends.linkedin.LinkedinOAuth2",
+#     "social_core.backends.google.GoogleOAuth2",
+#     "graphql_jwt.backends.JSONWebTokenBackend",
+#     "django.contrib.auth.backends.ModelBackend",  
+# )
 AUTHENTICATION_BACKENDS = [
     'django_python3_ldap.auth.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
