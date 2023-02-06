@@ -8,14 +8,14 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_204_NO_CONTENT
     )
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.parsers import FileUploadParser, MultiPartParser, JSONParser
 from rest_framework import viewsets
-
 from utils.core.CRQM.CRQM import CRQMClient
 from utils import utils
+import os
 from backendviteadmin.settings import MEDIA_ROOT
 
 # Create your views here.
@@ -168,56 +168,6 @@ class TestscriptViewSet(viewsets.ViewSet):
         pass
 
 
-# @api_view(['GET', 'PUT', 'POST'])
-# @parser_classes([JSONParser, MultiPartParser])
-# def testscript(request, id):
-#     # retreive data from cache
-#     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
-
-#     if request.method == 'GET':
-#         cache_key = f'RQM:get_testscript:{id}'
-#         cache_value = cache.get(cache_key)
-#         if cache_value is not None:
-#             return Response(cache_value, HTTP_200_OK)
-        
-#         cRQM.login()
-#         results = utils.get_script_from_testcase(RQMclient=cRQM, id=id)
-#         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
-#         cRQM.disconnect()
-#         return Response(results, HTTP_200_OK)
-    
-#     elif request.method == 'PUT':
-#         cRQM.login()    
-#         _ = utils.update_script_from_testcase(RQMclient=cRQM, id=id, data=request.data)
-        
-#         # restore testscript cache
-#         cache_key = f'RQM:get_testscript:{id}'
-#         results = utils.get_script_from_testcase(RQMclient=cRQM, id=id)
-#         cache.set(cache_key, results, 24 * 60 * 60)
-
-#         # change testcase cache
-#         cache_key = 'RQM:get_all:testcase'
-#         cache_value = cache.get(cache_key)
-#         if cache_value is not None:
-#             for index, item in enumerate(cache_value['data']):
-#                 if item['id'] == id:
-#                     cache_value['data'][index]['name'] = request.data['title']
-#                     break
-#             cache.set(cache_key, cache_value, 4 * 60 * 60)
-#         cRQM.disconnect()
-#         return Response(HTTP_201_CREATED)
-    
-#     elif request.method == 'POST':
-#         # up_file = request.FILES['file']
-#         # for chunk in up_file.chunks():
-#         #     print(chunk)
-#         print(request.data)
-#         return Response(HTTP_201_CREATED)
-    
-#     else:
-#         return Response(HTTP_405_METHOD_NOT_ALLOWED)
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def downloadFile(request, filename):
@@ -240,15 +190,12 @@ class FileView(APIView):
         return Response(up_file.name, HTTP_201_CREATED)
     
     def get(self, request, filename):
-        blob = utils.get_file_content(filename)
-        if blob:
-            file = HttpResponse(blob, content_type='text/plain')
+        try:
+            blob = open(os.path.join(utils.SOURCE, filename), 'rb')
+            file = FileResponse(blob)
             file['Content-Disposition'] = f"attachment; filename={filename}"
-            # zip_file = open(path_to_file, 'r')
-            # response = HttpResponse(zip_file, content_type='application/force-download')
-            # response['Content-Disposition'] = 'attachment; filename="%s"' % 'foo.zip'
             return file
-        else:
+        except:
             return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)
     
     def delete(self, request, filename):
