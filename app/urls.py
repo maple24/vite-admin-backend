@@ -8,6 +8,7 @@ from .views import (
     )
 
 router = routers.DefaultRouter()
+# no model, so basename is required
 router.register(r'testscript', TestscriptViewSet, basename='testscript')
 
 urlpatterns = [

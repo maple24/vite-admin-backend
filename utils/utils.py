@@ -3,9 +3,10 @@ import os
 from lxml import etree
 import json
 from concurrent.futures import ThreadPoolExecutor
-from utils.lib.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
+from utils.core.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
 
 CURRENT_DIR = Path(__file__).resolve().parent
+SOURCE = os.path.join(CURRENT_DIR, 'source')
 
 def _extractText(field):
     results = []
@@ -24,6 +25,21 @@ def _extractText(field):
             
     return '\n'.join(results)
 
+
+def _check_charset(file_path):
+    import chardet
+    with open(file_path, "rb") as f:
+        data = f.read(4)
+        charset = chardet.detect(data)['encoding']
+    return charset
+
+
+def util_generate_rdp_file(ip):
+    file = os.path.join(SOURCE, 'template.rdp')
+    with open(file, 'r', encoding=_check_charset(file)) as f:
+        content = f.read()
+        return content.format(ip)
+    
 
 def validateJsonTemplate(data):
     DEFAULTKEYS = {'title', 'scripts'}
@@ -207,7 +223,7 @@ def create_one_testcase(RQMclient: object, data: dict):
 
 
 def get_file_content(filename):
-    file_path =  os.path.join(CURRENT_DIR, 'source', filename)
+    file_path =  os.path.join(SOURCE, filename)
     if not os.path.exists(file_path):
         return
     with open(file_path, encoding='utf-8') as f:
@@ -216,7 +232,7 @@ def get_file_content(filename):
 
 
 def delete_file(filename):
-    file_path =  os.path.join(CURRENT_DIR, 'source', filename)
+    file_path =  os.path.join(SOURCE, filename)
     if not os.path.exists(file_path):
         return
     os.remove(file_path)

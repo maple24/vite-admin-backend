@@ -12,7 +12,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     # permission has been globaly set
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     @action(methods=['GET'], detail=False)
     def info(self, request, *args, **kwargs):
@@ -35,4 +35,4 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserRoleViewSet(viewsets.ModelViewSet):
     queryset = UserRole.objects.all()
     serializer_class = UserRoleSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]

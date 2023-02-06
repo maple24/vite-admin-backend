@@ -58,6 +58,7 @@ txaio==22.2.1
 typing_extensions==4.4.0
 tzdata==2022.2
 urllib3==1.26.13
+websocket-client==1.5.0
 websockets==10.3
 win32-setctime==1.1.0
 wsproto==1.2.0

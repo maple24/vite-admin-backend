@@ -1,6 +1,6 @@
-from django.shortcuts import render
-from rest_framework.decorators import api_view, parser_classes, action
+from rest_framework.decorators import api_view, parser_classes, action, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.status import (
     HTTP_200_OK, 
     HTTP_201_CREATED, 
@@ -13,20 +13,9 @@ from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.parsers import FileUploadParser, MultiPartParser, JSONParser
 from rest_framework import viewsets
-from loguru import logger
 
-from utils.lib.CRQM.CRQM import CRQMClient
-from utils.utils import (
-    get_script_from_testcase, 
-    get_file_content, 
-    delete_file, 
-    create_directory_if_not_exist,
-    update_script_from_testcase,
-    validateFile,
-    validateJsonTemplate,
-    create_testcases,
-    create_one_testcase
-    )
+from utils.core.CRQM.CRQM import CRQMClient
+from utils import utils
 from backendviteadmin.settings import MEDIA_ROOT
 
 # Create your views here.
@@ -38,6 +27,7 @@ HOST = 'https://rb-alm-20-p.de.bosch.com'
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def getAll(request, resourceType):
     # retreive data from cache
     cache_key = f'RQM:get_all:{resourceType}'
@@ -71,6 +61,7 @@ def getAll(request, resourceType):
 class TestscriptViewSet(viewsets.ViewSet):
     
     parser_classes = [JSONParser, MultiPartParser]
+    permission_classes = [IsAuthenticated]
     cRQM = CRQMClient(USERNAME, PASSWORD, PROJECT, HOST)
     
     def list(self, request):
@@ -82,9 +73,9 @@ class TestscriptViewSet(viewsets.ViewSet):
 
         # create testcase
         if isinstance(data, list): 
-            response = create_testcases(RQMclient=self.cRQM, data=data)
+            response = utils.create_testcases(RQMclient=self.cRQM, data=data)
         else:
-            response = create_one_testcase(RQMclient=self.cRQM, data=data)
+            response = utils.create_one_testcase(RQMclient=self.cRQM, data=data)
             
         # add into cache
         cache_key = 'RQM:get_all:testcase'
@@ -119,12 +110,12 @@ class TestscriptViewSet(viewsets.ViewSet):
         if cache_value is not None:
             return Response(cache_value, HTTP_200_OK)
         
-        results = get_script_from_testcase(RQMclient=self.cRQM, id=pk)
+        results = utils.get_script_from_testcase(RQMclient=self.cRQM, id=pk)
         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
         return Response(results, HTTP_200_OK)
 
     def update(self, request, pk=None):
-        _ = update_script_from_testcase(RQMclient=self.cRQM, id=pk, data=request.data)
+        _ = utils.update_script_from_testcase(RQMclient=self.cRQM, id=pk, data=request.data)
         
         # restore testscript cache
         cache_key = f'RQM:get_testscript:{pk}'
@@ -147,22 +138,22 @@ class TestscriptViewSet(viewsets.ViewSet):
         if 'file' in request.FILES:
             # deal with file
             up_file = request.FILES['file']
-            create_directory_if_not_exist(MEDIA_ROOT)
+            utils.create_directory_if_not_exist(MEDIA_ROOT)
             with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
                 for chunk in up_file.chunks():
                     destination.write(chunk)
-            data = validateFile(MEDIA_ROOT + up_file.name)
+            data = utils.validateFile(MEDIA_ROOT + up_file.name)
         else:
             data = request.data
         
         # validate data    
         if isinstance(data, list):
             for case in data:
-                res = validateJsonTemplate(case)
+                res = utils.validateJsonTemplate(case)
                 if res is not True:
                     return Response(res, HTTP_400_BAD_REQUEST)
         elif isinstance(data, dict):
-            res = validateJsonTemplate(data)
+            res = utils.validateJsonTemplate(data)
             if res is not True:
                 return Response(res, HTTP_400_BAD_REQUEST)
         else:
@@ -190,18 +181,18 @@ class TestscriptViewSet(viewsets.ViewSet):
 #             return Response(cache_value, HTTP_200_OK)
         
 #         cRQM.login()
-#         results = get_script_from_testcase(RQMclient=cRQM, id=id)
+#         results = utils.get_script_from_testcase(RQMclient=cRQM, id=id)
 #         cache.set(cache_key, results, 24 * 60 * 60) # cache for 24 hours
 #         cRQM.disconnect()
 #         return Response(results, HTTP_200_OK)
     
 #     elif request.method == 'PUT':
 #         cRQM.login()    
-#         _ = update_script_from_testcase(RQMclient=cRQM, id=id, data=request.data)
+#         _ = utils.update_script_from_testcase(RQMclient=cRQM, id=id, data=request.data)
         
 #         # restore testscript cache
 #         cache_key = f'RQM:get_testscript:{id}'
-#         results = get_script_from_testcase(RQMclient=cRQM, id=id)
+#         results = utils.get_script_from_testcase(RQMclient=cRQM, id=id)
 #         cache.set(cache_key, results, 24 * 60 * 60)
 
 #         # change testcase cache
@@ -228,8 +219,9 @@ class TestscriptViewSet(viewsets.ViewSet):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def downloadFile(request, filename):
-    blob = get_file_content(filename)
+    blob = utils.get_file_content(filename)
     file = HttpResponse(blob, content_type='text/plain')
     file['Content-Disposition'] = "attachment; filename=template.json"
     return file
@@ -237,17 +229,18 @@ def downloadFile(request, filename):
 
 class FileView(APIView):
     parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         up_file = request.FILES['file']
-        create_directory_if_not_exist(MEDIA_ROOT)
+        utils.create_directory_if_not_exist(MEDIA_ROOT)
         with open(MEDIA_ROOT + up_file.name, 'wb+') as destination:
             for chunk in up_file.chunks():
                 destination.write(chunk)
         return Response(up_file.name, HTTP_201_CREATED)
     
     def get(self, request, filename):
-        blob = get_file_content(filename)
+        blob = utils.get_file_content(filename)
         if blob:
             file = HttpResponse(blob, content_type='text/plain')
             file['Content-Disposition'] = f"attachment; filename={filename}"
@@ -256,7 +249,7 @@ class FileView(APIView):
             return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)
     
     def delete(self, request, filename):
-        del_file = delete_file(filename)
+        del_file = utils.delete_file(filename)
         if del_file:
             return Response(HTTP_204_NO_CONTENT)
         else:

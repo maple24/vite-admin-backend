@@ -9,10 +9,17 @@ class ChannelConsumer(AsyncWebsocketConsumer):
     '''
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.room_group_name = "chat_%s" % self.room_name
-        # 127.0.0.1 will be considered as anonymous, use localhost
-        if self.scope['user'].is_anonymous:
-            return AnonymousUser()
+        self.room_group_name = f"group_{self.room_name}"
+        
+        if self.room_group_name == "group_chat":
+            # chat room, authentication is required
+            # 127.0.0.1 will be considered as anonymous, use localhost
+            if self.scope['user'].is_anonymous:
+                return AnonymousUser()
+        elif self.room_group_name == "group_log":
+            # log room, no authentication is required
+            pass
+        self.user = self.scope['user'].username
         # Join room group
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 
@@ -27,35 +34,34 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         Called when receiving messages from group channel
         '''
         text_data_json = json.loads(text_data)
-        purpose = text_data_json.get("purpose", None)
+        purpose = text_data_json.get("purpose")
         message = text_data_json.get("message", "No message found!")
 
+        handler_func_map = {
+            "chat": "chat_message",
+            "log": "log_message",
+            "terminal": 'terminal_message'
+        }
         # Send events over the channel layer (broadcast)
-        if purpose == 'chat': 
-            hanlder_func = "chat_message"
-        elif purpose == 'log':
-            hanlder_func = "log_message"
-        else:
-            hanlder_func = "unexpected_message"
+        hanlder_func = handler_func_map.get(purpose, "unexpected_message")
             
         await self.channel_layer.group_send(
             self.room_group_name, 
             {
                 "type": hanlder_func,
                 # "room_id": room_id,
-                "username": self.scope["user"].username,
+                "username": self.user,
                 "message": message
             }
         )
 
-    # handling function to receive events and turn them into websockets 
+    # handling function to receive events and transmit them into websockets 
     async def chat_message(self, event):
         '''
         Called when someone has messaged our chat.
         '''
         await self.send(text_data=json.dumps(
                 {
-                    "purpose": "chat",
                     "message": event["message"],
                     "username": event["username"]
                 }
@@ -67,7 +73,13 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         '''
         await self.send(text_data=json.dumps(
                 {
-                    "purpose": "log",
+                    "message": event["message"],
+                }
+            ))
+    
+    async def terminal_message(self, event):
+        await self.send(text_data=json.dumps(
+                {
                     "message": event["message"],
                 }
             ))
