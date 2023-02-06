@@ -15,7 +15,6 @@ constantly==15.1.0
 cryptography==38.0.1
 daphne==3.0.2
 Django==4.1.1
-django-channels-jwt-auth-middleware==1.0.0
 django-extensions==3.2.1
 django-filter==22.1
 django-python3-ldap==0.15.3
