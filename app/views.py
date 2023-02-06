@@ -244,6 +244,9 @@ class FileView(APIView):
         if blob:
             file = HttpResponse(blob, content_type='text/plain')
             file['Content-Disposition'] = f"attachment; filename={filename}"
+            # zip_file = open(path_to_file, 'r')
+            # response = HttpResponse(zip_file, content_type='application/force-download')
+            # response['Content-Disposition'] = 'attachment; filename="%s"' % 'foo.zip'
             return file
         else:
             return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)

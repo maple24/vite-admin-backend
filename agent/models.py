@@ -2,8 +2,8 @@ from django.db import models
 
 # Create your models here.
 from django.db import models
-from user.models import User
 import datetime
+import pytz
 
 # Create your models here.
 
@@ -28,8 +28,9 @@ class Executor(models.Model):
         return self.name
 
     def is_online(self):
+        Tz = pytz.timezone("Asia/Shanghai") 
         if self.last_online_time:
-            delta = datetime.datetime.now() - self.last_online_time.replace(tzinfo=None)
+            delta = datetime.datetime.now(Tz) - self.last_online_time.replace(tzinfo=Tz)
             return delta < datetime.timedelta(seconds=10)
         else:
             return False
