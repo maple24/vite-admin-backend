@@ -30,7 +30,7 @@ class Executor(models.Model):
     def is_online(self):
         Tz = pytz.timezone("Asia/Shanghai") 
         if self.last_online_time:
-            delta = datetime.datetime.now(Tz) - self.last_online_time.replace(tzinfo=Tz)
+            delta = datetime.datetime.now() - self.last_online_time.replace(tzinfo=None)
             return delta < datetime.timedelta(seconds=10)
         else:
             return False
