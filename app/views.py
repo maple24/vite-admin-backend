@@ -179,7 +179,7 @@ def downloadFile(request, filename):
 
 class FileView(APIView):
     parser_classes = [MultiPartParser]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         up_file = request.FILES['file']
