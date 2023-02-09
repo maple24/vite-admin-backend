@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Executor
-from .serializers import ExecutorSerializer
+from .models import Executor, Task
+from .serializers import ExecutorSerializer, TaskSerializer
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
@@ -26,7 +26,7 @@ class ExecutorViewSet(viewsets.ModelViewSet):
     serializer_class = ExecutorSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
-    # filterset_fields = '__all__'
+    filterset_fields = '__all__'
     # filterset_class = ExecutorFilter
     
     # for extraaction, url has to be /api/v1/agent/executor/1/rdp
@@ -72,3 +72,10 @@ class ExecutorViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response(ResponseMessage.negative(e), HTTP_404_NOT_FOUND)
     
+    
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = '__all__'
+    filterset_fields = '__all__'

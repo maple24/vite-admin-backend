@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_python3_ldap',
     'channels',
+    "django_filters",
 
     # apps
     'ws',
