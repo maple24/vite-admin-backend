@@ -18,6 +18,7 @@ import datetime
 import json
 from utils import utils
 from utils.lib.message import ResponseMessage
+from utils.core.pagination import StandardResultsSetPagination
 
 
 # Create your views here.
@@ -79,3 +80,4 @@ class TaskViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     filterset_fields = '__all__'
+    pagination_class = StandardResultsSetPagination
