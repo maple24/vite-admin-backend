@@ -44,35 +44,31 @@ class KafkaMessage:
         self.args = args
 
     def __str__(self):
-        '''
-        str method should return a string as default, this is not a good way
-        '''
-        return {
-            'method': self.method,
-            'args': self.args
-        }
+        return f"KafkaMessage({self.method}, {self.args})"
 
     @classmethod
     def start_task(cls, **kwargs):
-        res = cls('start_task', kwargs).__str__()
+        res = cls('start_task', kwargs).__dict__
         return res
 
     @classmethod
     def stop_task(cls, **kwargs):
-        res = cls('stop_task', kwargs).__str__()
+        res = cls('stop_task', kwargs).__dict__
         return res
 
     @classmethod
     def start_log(cls, **kwargs):
-        res = cls('start_send_log', kwargs).__str__()
+        res = cls('start_send_log', kwargs).__dict__
         return res
 
     @classmethod
     def stop_log(cls, **kwargs):
-        res = cls('stop_send_log', kwargs).__str__()
+        res = cls('stop_send_log', kwargs).__dict__
         return res
 
 
 if __name__ == '__main__':
     me = KafkaMessage(method="sls", args={"name": "maple"})
-    print
+    print(me)
+    you = KafkaMessage.start_task(name="maple")
+    print(you)

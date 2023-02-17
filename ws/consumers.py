@@ -34,17 +34,16 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         Called when receiving messages from group channel
         '''
         text_data_json = json.loads(text_data)
-        purpose = text_data_json.get("purpose")
         method = text_data_json.get("method")
         args = text_data_json.get("args", "No args found!")
 
-        handler_func_map = {
+        handler_map = {
             "chat": "chat_message",
             "log": "log_message",
             "terminal": 'terminal_message'
         }
         # Send events over the channel layer (broadcast)
-        hanlder_func = handler_func_map.get(purpose, "unexpected_message")
+        hanlder_func = handler_map.get(method, "unexpected_message")
             
         await self.channel_layer.group_send(
             self.room_group_name, 
