@@ -139,7 +139,8 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+# remove timezone info in datetimefield
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -288,3 +289,7 @@ CACHES = {
     }
 }
 
+# kafka
+KAFKA = {
+    "bootstrap_servers": [f"{os.getenv('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.getenv('KAFKA_SERVER_PORT', '9092'))}"],
+}

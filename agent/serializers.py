@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Executor, Task
+from .models import Executor, Task, Target
 
 
 class ExecutorSerializer(serializers.ModelSerializer):
@@ -13,18 +13,26 @@ class ExecutorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TargetSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Target
+        fields = '__all__'
+
+
 class TaskSerializer(serializers.ModelSerializer):
     created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())  # auto created according to current user, so hidden field is applied
     created_by_account = serializers.ReadOnlyField(source="created_by.account")
     duration = serializers.SerializerMethodField(read_only=True)
     executor_ip = serializers.ReadOnlyField(source="executor.ip")
     executor_online = serializers.SerializerMethodField(read_only=True)
+    target_name = serializers.ReadOnlyField(source="target.name")
 
     def get_duration(self, obj):
         return obj.duration
     
     def get_executor_online(self, obj):
-        return obj.executor.is_online()
+        return obj.executor.is_online() if obj.executor else False
 
     class Meta:
         model = Task

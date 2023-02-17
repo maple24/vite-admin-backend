@@ -31,11 +31,22 @@ class ResponseMessage:
 
 
 class KafkaMessage:
+    '''
+    compression_type: none, gzip, snappy, lz4, zstd
+    headers: (optional)
+    partition: 
+    offset:
+    topic:
+    serializer: value serializer, key serializer
+    '''
     def __init__(self, method, args: dict):
         self.method = method
         self.args = args
 
     def __str__(self):
+        '''
+        str method should return a string as default, this is not a good way
+        '''
         return {
             'method': self.method,
             'args': self.args
@@ -61,3 +72,7 @@ class KafkaMessage:
         res = cls('stop_send_log', kwargs).__str__()
         return res
 
+
+if __name__ == '__main__':
+    me = KafkaMessage(method="sls", args={"name": "maple"})
+    print

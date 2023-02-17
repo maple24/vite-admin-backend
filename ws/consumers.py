@@ -35,7 +35,8 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         '''
         text_data_json = json.loads(text_data)
         purpose = text_data_json.get("purpose")
-        message = text_data_json.get("message", "No message found!")
+        method = text_data_json.get("method")
+        args = text_data_json.get("args", "No args found!")
 
         handler_func_map = {
             "chat": "chat_message",
@@ -51,7 +52,7 @@ class ChannelConsumer(AsyncWebsocketConsumer):
                 "type": hanlder_func,
                 # "room_id": room_id,
                 "username": self.user,
-                "message": message
+                "args": args
             }
         )
 
@@ -62,7 +63,7 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         '''
         await self.send(text_data=json.dumps(
                 {
-                    "message": event["message"],
+                    "args": event["args"],
                     "username": event["username"]
                 }
             ))
@@ -73,14 +74,14 @@ class ChannelConsumer(AsyncWebsocketConsumer):
         '''
         await self.send(text_data=json.dumps(
                 {
-                    "message": event["message"],
+                    "args": event["args"],
                 }
             ))
     
     async def terminal_message(self, event):
         await self.send(text_data=json.dumps(
                 {
-                    "message": event["message"],
+                    "args": event["args"],
                 }
             ))
     
