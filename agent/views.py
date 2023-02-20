@@ -90,22 +90,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     filterset_fields = '__all__'
     pagination_class = StandardResultsSetPagination # customized pagination method
     
-    @action(methods=['GET'], detail=False)
-    def list_task(self, request):
-        '''
-        get all tasks without tagged `delete`
-        '''
-        queryset = Task.objects.filter(is_deleted=False)
-        serializer = TaskSerializer(queryset, many=True)
-        return Response(serializer.data, HTTP_200_OK)
-    
-    @action(methods=['POST'], detail=True)
-    def destroy_task(self, request, pk=None):
+    @action(methods=['DELETE'], detail=True)
+    def delete_task(self, request, pk=None):
         '''
         hide tasks tagged with `is_delete=True`, in this way all tasks records are stored
         '''
         task = get_object_or_404(Task, pk=pk)
-        task.delete()
+        task.hide()
         return Response(ResponseMessage.positive(), HTTP_204_NO_CONTENT)
     
     @action(methods=['POST'], detail=True)

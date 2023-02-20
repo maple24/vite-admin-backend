@@ -293,3 +293,17 @@ CACHES = {
 KAFKA = {
     "bootstrap_servers": [f"{os.getenv('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.getenv('KAFKA_SERVER_PORT', '9092'))}"],
 }
+
+# Celery
+CELERY_BROKER_URL = f"redis://{os.environ.get('REDIS_HOST', '127.0.0.1')}:{os.environ.get('REDIS_PORT', 6379)}"
+CELERY_RESULT_BACKEND = f"redis://{os.environ.get('REDIS_HOST', '127.0.0.1')}:{os.environ.get('REDIS_PORT', 6379)}"
+CELERY_BEAT_SCHEDULE = {
+      'test-every-5-seconds': {
+        'task': 'app.tasks.test_celery',
+        'schedule': 5.0,
+        'args': (),
+        'options': {
+            'expires': 15.0, #  if it's not able to run this task within 15 seconds, to just cancel it
+        },
+    },
+}

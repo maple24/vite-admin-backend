@@ -204,3 +204,18 @@ class FileView(APIView):
             return Response(HTTP_204_NO_CONTENT)
         else:
             return Response({'msg': 'File not found!'}, HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def test(reqeust):
+    from .tasks import test_celery
+    task = test_celery.delay()
+    # print(task.id)
+    # from celery.result import AsyncResult
+    # result = AsyncResult(task.id)
+    # print(result.result)
+    # print(result.status)
+    # res = result.get() # block to get response
+    # import time
+    # time.sleep(10)
+    return Response({"msg": task.id}, HTTP_200_OK)

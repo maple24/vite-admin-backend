@@ -233,7 +233,7 @@ class Task(models.Model):
         else:
             return False
         
-    def delete(self):
+    def hide(self):
         self.is_deleted = True
         self.save()
         return True
