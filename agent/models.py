@@ -25,7 +25,7 @@ class Executor(models.Model):
     last_online_time = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(null=True, blank=True)
     location = models.CharField(max_length=64, null=True, blank=True, choices=LocationChoice.choices)
-    # scripts = models.TextField(null=True, blank=True)
+    scripts = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -199,10 +199,12 @@ class Task(models.Model):
     status = models.CharField(max_length=64, default=StatusChoices.IDLING, choices=StatusChoices.choices)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
-    published_time = models.DateTimeField(null=True, blank=True)
+    schedule_time = models.DateTimeField(null=True, blank=True)
+    publish_time = models.DateTimeField(null=True, blank=True)
     is_scheduled = models.BooleanField(default=False)
     schedule_id = models.CharField(max_length=256, null=True, blank=True)
     comments = models.CharField(max_length=256, null=True, blank=True)
+    script = models.CharField(max_length=128, null=True, blank=True)
     params = models.CharField(max_length=256, null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=128, null=True, blank=True)
@@ -227,8 +229,8 @@ class Task(models.Model):
         eta=datetime.datetime.utcfromtimestamp(self.start_time.timestamp())
         just send a message here, or call a execute request to myself
         '''
-        if not self.start_time: return False
-        scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(self.start_time.timestamp()))
+        if not self.schedule_time: return False
+        scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(self.schedule_time.timestamp()))
         self.status = Task.StatusChoices.SCHEDULED
         self.schedule_id = scheduled_task.id
         self.save()
@@ -262,7 +264,7 @@ class Task(models.Model):
                 self._producer.send_msg(topic, message, key="task")
                 self.reason = None
                 self.status = Task.StatusChoices.PUBLISHED
-                self.published_time = datetime.datetime.now()
+                self.publish_time = datetime.datetime.now()
                 self.save()
             else:
                 self.status = Task.StatusChoices.QUEUING

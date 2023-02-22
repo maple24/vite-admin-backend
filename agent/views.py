@@ -60,8 +60,7 @@ class ExecutorViewSet(viewsets.ModelViewSet):
             agent.name = hostname
             agent.hostname = hostname
         agent.ip = data.get('ip')
-        # agent.scripts = data.get('scripts')
-        # agent.support_task_types = json.dumps(script)
+        agent.scripts = json.dumps(data.get('scripts')) # convert list to json string
         agent.save()
         return Response(ResponseMessage.positive(), HTTP_201_CREATED)
 
