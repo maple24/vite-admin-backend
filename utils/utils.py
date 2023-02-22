@@ -244,6 +244,12 @@ def create_directory_if_not_exist(dir_path):
         os.mkdir(dir_path)
 
 
+class MyObject:
+    def __init__(self, d=None):
+        if d is not None:
+            for key, value in d.items():
+                setattr(self, key, value)
+
 if __name__ == '__main__':
     # RQMclient = CRQMClient("ets1szh", "estbangbangde5",
     #                     "Zeekr", "https://rb-alm-20-p.de.bosch.com")

@@ -51,17 +51,16 @@ class ExecutorViewSet(viewsets.ModelViewSet):
         default create method of modelviewset has the same function as register, but more required fields
         '''
         data = request.data
-        if isinstance(data, str): data = json.loads(data)
-        ip = data.get('ip')
+        if isinstance(data, str): data = json.loads(data) # json type or dict type
         hostname = data.get('hostname')
-        # script = data.get('script')
         try:
             agent = Executor.objects.get(hostname=hostname)
         except ObjectDoesNotExist:
             agent = Executor()
             agent.name = hostname
             agent.hostname = hostname
-        agent.ip = ip
+        agent.ip = data.get('ip')
+        # agent.scripts = data.get('scripts')
         # agent.support_task_types = json.dumps(script)
         agent.save()
         return Response(ResponseMessage.positive(), HTTP_201_CREATED)
@@ -70,10 +69,11 @@ class ExecutorViewSet(viewsets.ModelViewSet):
     def heartbeat(self, request):
         data = request.data
         if isinstance(data, str): data = json.loads(data)
-        hostname = data.get("hostname")
-        agent = get_object_or_404(Executor, hostname=hostname)
+        agent = get_object_or_404(Executor, hostname=data.get("hostname"))
         agent.last_online_time = datetime.datetime.now()
         agent.save()
+        agent.pop_task() # run next queuing task
+        agent.check_task(task_list=data.get("task_list")) # remove invalid tasks
         return Response(ResponseMessage.positive(), HTTP_201_CREATED)
     
     
@@ -102,7 +102,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(methods=['POST'], detail=True)
     def execute_task(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
-        if task.publish():
+        res = task.schedule() if task.is_scheduled and not task.schedule_id else task.publish()
+        if res:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
         else:
             return Response(ResponseMessage.negative("Task is not allowed executing!"), HTTP_400_BAD_REQUEST)
@@ -110,7 +111,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(methods=['POST'], detail=True)
     def stop_task(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
-        if task.terminate():
+        res = task.revoke() if task.schedule_id else task.terminate()
+        if res:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
         else:
             return Response(ResponseMessage.negative("Task is not allowed terminating!"), HTTP_400_BAD_REQUEST)

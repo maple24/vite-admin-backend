@@ -209,7 +209,9 @@ class FileView(APIView):
 @api_view(['GET'])
 def test(reqeust):
     from .tasks import test_celery
-    task = test_celery.delay()
+    # task = test_celery.delay()
+    task = test_celery.apply_async(countdown=10)
+    # task = test_celery.apply_async(eta=now + timedelta(seconds=10))
     # print(task.id)
     # from celery.result import AsyncResult
     # result = AsyncResult(task.id)

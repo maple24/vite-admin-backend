@@ -1,5 +1,5 @@
 from django.db import models
-
+from celery.result import AsyncResult
 # Create your models here.
 from django.db import models
 from user.models import User
@@ -7,6 +7,7 @@ import datetime
 import pytz
 from utils.core.producer import MessageProducer
 from utils.lib.message import KafkaMessage
+from app.tasks import execute_task
 
 # Create your models here.
 
@@ -24,6 +25,7 @@ class Executor(models.Model):
     last_online_time = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(null=True, blank=True)
     location = models.CharField(max_length=64, null=True, blank=True, choices=LocationChoice.choices)
+    # scripts = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -35,11 +37,30 @@ class Executor(models.Model):
             return delta < datetime.timedelta(seconds=10)
         else:
             return False
+    
+    def pop_task(self):
+        '''
+        pop task from queue
+        '''
+        queuing_tasks = Task.objects.filter(executor=self, is_deleted=False, status=Task.StatusChoices.QUEUING).order_by('id')
+        if len(queuing_tasks) > 0: queuing_tasks[0].publish()
+    
+    def check_task(self, task_list: list):
+        '''
+        check and remove invalid tasks, eg. lost heartbeat when running
+        '''
+        running_records = Task.objects.filter(executor=self, is_deleted=False, status__in=Task.StatusChoices._running_status)
+        for record in running_records:
+            if record.id not in task_list:
+                record.status = Task.StatusChoices.ERROR
+                record.end_time = datetime.datetime.now()
+                record.reason = 'Lost heartbeat.'
+                record.save()
 
 
 class Target(models.Model):
     name = models.CharField(max_length=128)
-    # executor = models.ForeignKey(Executor, on_delete=models.CASCADE)
+    # executor = models.ForeignKey(Executor, on_delete=models.CASCADE) # should be a manytomany field
     comments = models.CharField(max_length=256, null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
 
@@ -153,7 +174,9 @@ class Task(models.Model):
             status = [
                 cls.IDLING,
                 cls.COMPLETED,
-                cls.CANCELED
+                cls.CANCELED,
+                cls.QUEUING,
+                cls.SCHEDULED
             ]
             return status
 
@@ -170,16 +193,16 @@ class Task(models.Model):
         
     name = models.CharField(max_length=64)
     executor = models.ForeignKey(Executor, on_delete=models.CASCADE, null=True, blank=True)
+    target = models.ForeignKey(Target, on_delete=models.CASCADE, null=True, blank=True) # HW
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     creation_time = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     status = models.CharField(max_length=64, default=StatusChoices.IDLING, choices=StatusChoices.choices)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     published_time = models.DateTimeField(null=True, blank=True)
-    scheduled_time = models.DateTimeField(null=True, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    is_scheduled = models.BooleanField(default=False)
+    schedule_id = models.CharField(max_length=256, null=True, blank=True)
     comments = models.CharField(max_length=256, null=True, blank=True)
-    target = models.ForeignKey(Target, on_delete=models.CASCADE, null=True, blank=True) # HW
-    script = models.CharField(max_length=256, null=True, blank=True)
     params = models.CharField(max_length=256, null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
     reason = models.CharField(max_length=128, null=True, blank=True)
@@ -195,8 +218,36 @@ class Task(models.Model):
     @staticmethod
     def timeDiff(end: datetime.datetime, start: datetime.datetime):
         seconds = (end - start).total_seconds()
+        if seconds < 0: return 0
         return str(datetime.timedelta(seconds=seconds)).split(".")[0]
-         
+    
+    def schedule(self):
+        '''
+        status of a scheduled task is controled by agent itself because celery does not support a self function
+        eta=datetime.datetime.utcfromtimestamp(self.start_time.timestamp())
+        just send a message here, or call a execute request to myself
+        '''
+        if not self.start_time: return False
+        scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(self.start_time.timestamp()))
+        self.status = Task.StatusChoices.SCHEDULED
+        self.schedule_id = scheduled_task.id
+        self.save()
+        return True
+    
+    def revoke(self):
+        # cancel out a scheduled task
+        '''
+        Task app.tasks.test_celery[e69ab07e-ed23-4621-b121-446abb758d4a] received
+        Discarding revoked task: app.tasks.test_celery[e69ab07e-ed23-4621-b121-446abb758d4a]
+        '''
+        scheduled_task = AsyncResult(self.schedule_id)
+        scheduled_task.revoke()
+        self.schedule_id = None
+        self.status = Task.StatusChoices.CANCELED
+        self.reason = 'Cancelled by user.'
+        self.save()
+        return True
+    
     def publish(self):
         if not self.target: return False
         if Task.StatusChoices.allow_start(self.status):
@@ -204,11 +255,12 @@ class Task(models.Model):
                 topic = self.executor.hostname
                 message = KafkaMessage.start_task(
                     task_id=self.id,
-                    target=self.target.name,
-                    script="run.bat",
-                    params=self.params,
+                    target=self.target.name, #TODO, not necessary var
+                    script="run.bat", #TODO, self.script
+                    params=self.params, #TODO
                 )
                 self._producer.send_msg(topic, message, key="task")
+                self.reason = None
                 self.status = Task.StatusChoices.PUBLISHED
                 self.published_time = datetime.datetime.now()
                 self.save()
