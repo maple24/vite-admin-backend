@@ -291,7 +291,7 @@ CACHES = {
 
 # kafka
 KAFKA = {
-    "bootstrap_servers": [f"{os.getenv('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.getenv('KAFKA_SERVER_PORT', '9092'))}"],
+    "bootstrap_servers": [f"{os.environ.get('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.environ.get('KAFKA_SERVER_PORT', '9092'))}"],
 }
 
 # Celery

@@ -2,10 +2,12 @@
 from celery import shared_task
 import requests
 from loguru import logger
+import os
 
+HOST = os.getenv('DOCKER_HOST', 'localhost')
 
 ROUTE = {
-    'execute_task': 'http://localhost:8000/api/v1/agent/task/{0}/execute_task/'
+    'execute_task': 'http://{0}:8000/api/v1/agent/task/{1}/execute_task/'
 }
 
 # transform this function into a Celery task, decorate it with @shared_task
@@ -26,7 +28,7 @@ def test_celery():
 
 @shared_task
 def execute_task(id: int):
-    url = ROUTE.get('execute_task').format(id)
+    url = ROUTE.get('execute_task').format(HOST, id)
     try:
         response = requests.post(url)
         if response.status_code == 201:
@@ -38,6 +40,6 @@ def execute_task(id: int):
 
 
 if __name__ == '__main__':
-    execute_task(18)
+    print(ROUTE.get('execute_task').format(HOST, 2))
     
         

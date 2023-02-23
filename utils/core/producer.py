@@ -6,10 +6,9 @@ from utils.lib.message import ResponseMessage
     
 
 class MessageProducer:
-    broker = KAFKA["bootstrap_servers"]
-    producer = None
 
-    def __init__(self, retries=3):
+    def __init__(self, broker=KAFKA["bootstrap_servers"], retries=3):
+        self.broker = broker
         self.producer = KafkaProducer(
             bootstrap_servers = self.broker,
             value_serializer = lambda v: json.dumps(v).encode('utf-8'),
@@ -22,7 +21,7 @@ class MessageProducer:
         future = self.producer.send(topic, value, key)
         self.producer.flush()
         try:
-            future.get(timeout=60)
+            future.get(timeout=10)
             return {'status_code':200, 'error':None}
         except KafkaError as e:
             raise e

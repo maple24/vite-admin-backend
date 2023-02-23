@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from lxml import etree
 import json
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 from utils.core.CRQM.CRQM import CRQMClient, get_xml_tree, BytesIO
 
@@ -243,6 +244,9 @@ def create_directory_if_not_exist(dir_path):
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
 
+
+def get_timezone() -> str:
+    return str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
 
 class MyObject:
     def __init__(self, d=None):

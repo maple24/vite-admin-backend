@@ -222,6 +222,10 @@ class Task(models.Model):
         seconds = (end - start).total_seconds()
         if seconds < 0: return 0
         return str(datetime.timedelta(seconds=seconds)).split(".")[0]
+
+    @staticmethod
+    def get_timezone() -> str:
+        return str(datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo)
     
     def schedule(self):
         '''
@@ -230,7 +234,11 @@ class Task(models.Model):
         just send a message here, or call a execute request to myself
         '''
         if not self.schedule_time: return False
-        scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(self.schedule_time.timestamp()))
+        if self.get_timezone() == 'UTC': 
+            time = self.schedule_time - datetime.timedelta(hours=8) # substract 8 hours because of UTC timezone in docker container and China Standard Time timezone in web
+        else:
+            time = self.schedule_time
+        scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(time.timestamp()))
         self.status = Task.StatusChoices.SCHEDULED
         self.schedule_id = scheduled_task.id
         self.save()
@@ -258,8 +266,8 @@ class Task(models.Model):
                 message = KafkaMessage.start_task(
                     task_id=self.id,
                     target=self.target.name, #TODO, not necessary var
-                    script="run.bat", #TODO, self.script
-                    params=self.params, #TODO
+                    script=self.script, 
+                    params=self.params, 
                 )
                 self._producer.send_msg(topic, message, key="task")
                 self.reason = None
