@@ -23,8 +23,14 @@ services:
       - ./:/backend/
     ports:
       - 8000:8000
-    env_file:
-      - ./docker.env
+    environment:
+      - REDIS_SERVER_HOST=redis
+      - REDIS_SERVER_PORT=6379
+      - KAFKA_SERVER_HOST=kafka
+      - KAFKA_SERVER_PORT=9094
+      - MYSQL_SERVER_HOST=db
+      - MYSQL_SERVER_PORT=3306
+      - DOCKER_INTERNAL_HOST=host.docker.internal
     depends_on:
       - redis
       - kafka-ui
@@ -39,8 +45,13 @@ services:
     environment:
       - DEBUG=1
       - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
-    env_file:
-      - ./docker.env
+      - REDIS_SERVER_HOST=redis
+      - REDIS_SERVER_PORT=6379
+      - KAFKA_SERVER_HOST=kafka
+      - KAFKA_SERVER_PORT=9094
+      - MYSQL_SERVER_HOST=db
+      - MYSQL_SERVER_PORT=3306
+      - DOCKER_INTERNAL_HOST=host.docker.internal
     depends_on:
       - redis
       - kafka
@@ -54,8 +65,13 @@ services:
     environment:
       - DEBUG=1
       - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
-    env_file:
-      - ./docker.env
+      - REDIS_SERVER_HOST=redis
+      - REDIS_SERVER_PORT=6379
+      - KAFKA_SERVER_HOST=kafka
+      - KAFKA_SERVER_PORT=9094
+      - MYSQL_SERVER_HOST=db
+      - MYSQL_SERVER_PORT=3306
+      - DOCKER_INTERNAL_HOST=host.docker.internal
     depends_on:
       - redis
       - kafka
@@ -103,8 +119,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    env_file:
-      - ./docker.env
 
   kafka-ui:
     image: provectuslabs/kafka-ui

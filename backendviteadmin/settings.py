@@ -95,7 +95,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             # "hosts": [("127.0.0.1", 6379)],
-            "hosts": [(os.environ.get('REDIS_HOST', '127.0.0.1'), os.environ.get('REDIS_PORT', 6379))],
+            "hosts": [(os.environ.get('REDIS_SERVER_HOST', '127.0.0.1'), os.environ.get('REDIS_SERVER_PORT', 6379))],
         },
     },
 }
@@ -118,8 +118,8 @@ DATABASES = {
         'NAME': os.environ.get('MYSQL_DATABASE', 'viteadmin'),
         'USER': os.environ.get('MYSQL_USER', 'root'),
         'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'adminadmin'),
-        'HOST': os.environ.get('MYSQL_DATABASE_HOST', 'localhost'),
-        'PORT': os.environ.get('MYSQL_DATABASE_PORT', 3306),
+        'HOST': os.environ.get('MYSQL_SERVER_HOST', 'localhost'),
+        'PORT': os.environ.get('MYSQL_SERVER_PORT', 3306),
     }
 }
 
@@ -298,18 +298,18 @@ SIMPLE_JWT = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f"redis://{os.environ.get('REDIS_HOST', '127.0.0.1')}:{os.environ.get('REDIS_PORT', 6379)}",
+        'LOCATION': f"redis://{os.environ.get('REDIS_SERVER_HOST', '127.0.0.1')}:{os.environ.get('REDIS_SERVER_PORT', 6379)}",
     }
 }
 
 # kafka
 KAFKA = {
-    "bootstrap_servers": [f"{os.environ.get('KAFKA_HOST', '127.0.0.1')}:{int(os.environ.get('KAFKA_PORT', '9092'))}"],
+    "bootstrap_servers": [f"{os.environ.get('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.environ.get('KAFKA_SERVER_PORT', '9092'))}"],
 }
 
 # Celery
-CELERY_BROKER_URL = f"redis://{os.environ.get('REDIS_HOST', '127.0.0.1')}:{os.environ.get('REDIS_PORT', 6379)}"
-CELERY_RESULT_BACKEND = f"redis://{os.environ.get('REDIS_HOST', '127.0.0.1')}:{os.environ.get('REDIS_PORT', 6379)}"
+CELERY_BROKER_URL = f"redis://{os.environ.get('REDIS_SERVER_HOST', '127.0.0.1')}:{os.environ.get('REDIS_SERVER_PORT', 6379)}"
+CELERY_RESULT_BACKEND = f"redis://{os.environ.get('REDIS_SERVER_HOST', '127.0.0.1')}:{os.environ.get('REDIS_SERVER_PORT', 6379)}"
 # CELERY_BEAT_SCHEDULE = {
 #       'test-every-5-seconds': {
 #         'task': 'app.tasks.test_celery',
