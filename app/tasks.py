@@ -4,7 +4,7 @@ import requests
 from loguru import logger
 import os
 
-HOST = os.getenv('DOCKER_HOST', 'localhost')
+HOST = os.getenv('DOCKER_INTERNAL_HOST', 'localhost')
 
 ROUTE = {
     'execute_task': 'http://{0}:8000/api/v1/agent/task/{1}/execute_task/'

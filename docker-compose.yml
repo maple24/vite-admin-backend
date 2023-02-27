@@ -1,16 +1,24 @@
 version: '3'
 
 services:
+  db:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: 'viteadmin'
+      MYSQL_USER: 'ziu7wx'
+      MYSQL_PASSWORD: 'adminadmin'
+      MYSQL_ROOT_PASSWORD: 'adminadmin'
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - ./data:/var/lib/mysql
+
   backend:
     restart: always
     build: .
     # command: daphne core.asgi:application -b 0.0.0.0 -p 8000
     container_name: backend
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - KAFKA_SERVER_HOST=kafka
-      - KAFKA_SERVER_PORT=9094
     volumes:
       - ./:/backend/
     ports:
@@ -18,6 +26,7 @@ services:
     depends_on:
       - redis
       - kafka-ui
+      - db
 
   celery:
     restart: always
@@ -27,13 +36,7 @@ services:
       - ./:/backend/
     environment:
       - DEBUG=1
-      # use tasks call internal api have to use internal host
-      - DOCKER_HOST=host.docker.internal
       - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - KAFKA_SERVER_HOST=kafka
-      - KAFKA_SERVER_PORT=9094
     depends_on:
       - redis
       - kafka
@@ -47,10 +50,6 @@ services:
     environment:
       - DEBUG=1
       - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - KAFKA_SERVER_HOST=kafka
-      - KAFKA_SERVER_PORT=9094
     depends_on:
       - redis
       - kafka

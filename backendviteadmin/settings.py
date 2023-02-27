@@ -103,10 +103,23 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# sqlite
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+# mysql
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('MYSQL_DATABASE', 'viteadmin'),
+        'USER': os.environ.get('MYSQL_USER', 'root'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'adminadmin'),
+        'HOST': os.environ.get('MYSQL_DATABASE_HOST', 'localhost'),
+        'PORT': os.environ.get('MYSQL_DATABASE_PORT', 3306),
     }
 }
 
@@ -291,7 +304,7 @@ CACHES = {
 
 # kafka
 KAFKA = {
-    "bootstrap_servers": [f"{os.environ.get('KAFKA_SERVER_HOST', '127.0.0.1')}:{int(os.environ.get('KAFKA_SERVER_PORT', '9092'))}"],
+    "bootstrap_servers": [f"{os.environ.get('KAFKA_HOST', '127.0.0.1')}:{int(os.environ.get('KAFKA_PORT', '9092'))}"],
 }
 
 # Celery
