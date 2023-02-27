@@ -8,9 +8,9 @@ import pytz
 from utils.core.producer import MessageProducer
 from utils.lib.message import KafkaMessage
 from app.tasks import execute_task
+from utils.core.producer import producer
 
 # Create your models here.
-
 class Executor(models.Model):
     class LocationChoice(models.TextChoices):
         SUZHOU = 'Szh'
@@ -77,7 +77,6 @@ class Target(models.Model):
 
 
 class Task(models.Model):
-    _producer = MessageProducer()
 
     class StatusChoices(models.TextChoices):
         IDLING = 'Idling'
@@ -269,7 +268,7 @@ class Task(models.Model):
                     script=self.script, 
                     params=self.params, 
                 )
-                self._producer.send_msg(topic, message, key="task")
+                producer.send_msg(topic, message, key="task")
                 self.reason = None
                 self.status = Task.StatusChoices.PUBLISHED
                 self.publish_time = datetime.datetime.now()
@@ -287,7 +286,7 @@ class Task(models.Model):
             message = KafkaMessage.stop_task(
                 task_id=self.id
                 )
-            self._producer.send_msg(topic, message, key="task")
+            producer.send_msg(topic, message, key="task")
             self.status = Task.StatusChoices.CANCELED
             self.reason = 'Task terminated by user.'
             self.save()

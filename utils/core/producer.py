@@ -27,6 +27,8 @@ class MessageProducer:
             raise e
 
 
+producer = MessageProducer()
+
 if __name__ == '__main__':
     broker = 'localhost:9092'
     topic = 'test-topic'
