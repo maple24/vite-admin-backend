@@ -239,6 +239,7 @@ class Task(models.Model):
         scheduled_task = execute_task.apply_async(args=[self.id], eta=datetime.datetime.utcfromtimestamp(time.timestamp()))
         self.status = Task.StatusChoices.SCHEDULED
         self.schedule_id = scheduled_task.id
+        self.reason = None
         self.save()
         return True
     
