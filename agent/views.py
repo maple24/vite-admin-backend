@@ -102,16 +102,16 @@ class TaskViewSet(viewsets.ModelViewSet):
     def execute_task(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
         res = task.schedule() if task.is_scheduled and not task.schedule_id else task.publish()
-        if res:
+        if res is True:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
         else:
-            return Response(ResponseMessage.negative("Task is not allowed executing!"), HTTP_400_BAD_REQUEST)
+            return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)
     
     @action(methods=['POST'], detail=True)
     def stop_task(self, request, pk=None):
         task = get_object_or_404(Task, pk=pk)
         res = task.revoke() if task.schedule_id else task.terminate()
-        if res:
+        if res is True:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
         else:
-            return Response(ResponseMessage.negative("Task is not allowed terminating!"), HTTP_400_BAD_REQUEST)
+            return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)

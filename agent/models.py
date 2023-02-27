@@ -5,7 +5,6 @@ from django.db import models
 from user.models import User
 import datetime
 import pytz
-from utils.core.producer import MessageProducer
 from utils.lib.message import KafkaMessage
 from app.tasks import execute_task
 from utils.core.producer import producer
@@ -232,7 +231,7 @@ class Task(models.Model):
         eta=datetime.datetime.utcfromtimestamp(self.start_time.timestamp())
         just send a message here, or call a execute request to myself
         '''
-        if not self.schedule_time: return False
+        if not self.schedule_time: return "No schedule time allocated!"
         if self.get_timezone() == 'UTC': 
             time = self.schedule_time - datetime.timedelta(hours=8) # substract 8 hours because of UTC timezone in docker container and China Standard Time timezone in web
         else:
@@ -258,13 +257,12 @@ class Task(models.Model):
         return True
     
     def publish(self):
-        if not self.target: return False
+        if not self.target: return "No available target!"
         if Task.StatusChoices.allow_start(self.status):
             if self.target.is_idling():
                 topic = self.executor.hostname
                 message = KafkaMessage.start_task(
                     task_id=self.id,
-                    target=self.target.name, #TODO, not necessary var
                     script=self.script, 
                     params=self.params, 
                 )
@@ -278,7 +276,7 @@ class Task(models.Model):
                 self.save()
             return True
         else:
-            return False
+            return "Current task status is not allowed starting!"
         
     def terminate(self):
         if Task.StatusChoices.allow_stop(self.status):
@@ -292,7 +290,7 @@ class Task(models.Model):
             self.save()
             return True
         else:
-            return False
+            return "Current task status is not allowed terminating!"
         
     def hide(self):
         self.is_deleted = True
