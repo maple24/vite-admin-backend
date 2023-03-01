@@ -34,8 +34,7 @@ class Executor(models.Model):
         if self.last_online_time:
             delta = datetime.datetime.now() - self.last_online_time.replace(tzinfo=None)
             return delta < datetime.timedelta(seconds=10)
-        else:
-            return False
+        return False
     
     def pop_task(self):
         '''
@@ -271,13 +270,11 @@ class Task(models.Model):
                 self.reason = None
                 self.status = Task.StatusChoices.PUBLISHED
                 self.publish_time = datetime.datetime.now()
-                self.save()
             else:
                 self.status = Task.StatusChoices.QUEUING
-                self.save()
+            self.save()
             return True
-        else:
-            return "Current task status is not allowed starting!"
+        return "Current task status is not allowed starting!"
         
     def terminate(self):
         if Task.StatusChoices.allow_stop(self.status):
@@ -290,8 +287,7 @@ class Task(models.Model):
             self.reason = 'Task terminated by user.'
             self.save()
             return True
-        else:
-            return "Current task status is not allowed terminating!"
+        return "Current task status is not allowed terminating!"
         
     def hide(self):
         self.is_deleted = True

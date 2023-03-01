@@ -104,8 +104,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         res = task.schedule() if task.is_scheduled and not task.schedule_id else task.publish()
         if res is True:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
-        else:
-            return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)
+        return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)
     
     @action(methods=['POST'], detail=True)
     def stop_task(self, request, pk=None):
@@ -113,5 +112,4 @@ class TaskViewSet(viewsets.ModelViewSet):
         res = task.revoke() if task.schedule_id else task.terminate()
         if res is True:
             return Response(ResponseMessage.positive(), HTTP_201_CREATED)
-        else:
-            return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)
+        return Response(ResponseMessage.negative(res), HTTP_400_BAD_REQUEST)
