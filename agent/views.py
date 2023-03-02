@@ -69,7 +69,9 @@ class ExecutorViewSet(viewsets.ModelViewSet):
         data = request.data
         if isinstance(data, str): data = json.loads(data)
         agent = get_object_or_404(Executor, hostname=data.get("hostname"))
+        agent.ip = data.get('ip')
         agent.last_online_time = datetime.datetime.now()
+        agent.is_active = data.get("is_active", False)
         agent.save()
         agent.pop_task() # run next queuing task
         agent.check_task(task_list=data.get("task_list")) # remove invalid tasks

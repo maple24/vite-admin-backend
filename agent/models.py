@@ -25,6 +25,8 @@ class Executor(models.Model):
     comments = models.TextField(null=True, blank=True)
     location = models.CharField(max_length=64, null=True, blank=True, choices=LocationChoice.choices)
     scripts = models.TextField(null=True, blank=True)
+    is_active = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.name
