@@ -4,10 +4,14 @@ from .models import Executor, Task, Target
 
 class ExecutorSerializer(serializers.ModelSerializer):
     online = serializers.SerializerMethodField(read_only=True)
+    last_seen = serializers.SerializerMethodField(read_only=True)
 
     def get_online(self, obj):
         return obj.is_online()
 
+    def get_last_seen(self, obj):
+        return obj.last_seen
+    
     class Meta:
         model = Executor
         fields = '__all__'

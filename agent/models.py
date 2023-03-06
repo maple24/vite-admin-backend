@@ -38,6 +38,12 @@ class Executor(models.Model):
             return delta < datetime.timedelta(seconds=10)
         return False
     
+    @property
+    def last_seen(self):
+        if self.is_online(): return
+        if not self.last_online_time: return
+        return Task.timeDiff(datetime.datetime.now(), self.last_online_time.replace(tzinfo=None)) + ' ago'
+    
     def pop_task(self):
         '''
         pop task from queue
