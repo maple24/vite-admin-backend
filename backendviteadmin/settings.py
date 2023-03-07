@@ -310,13 +310,14 @@ KAFKA = {
 # Celery
 CELERY_BROKER_URL = f"redis://{os.environ.get('REDIS_SERVER_HOST', '127.0.0.1')}:{os.environ.get('REDIS_SERVER_PORT', 6379)}"
 CELERY_RESULT_BACKEND = f"redis://{os.environ.get('REDIS_SERVER_HOST', '127.0.0.1')}:{os.environ.get('REDIS_SERVER_PORT', 6379)}"
+# CELERY_TIMEZONE = "Asia/Shanghai"
 # CELERY_BEAT_SCHEDULE = {
-#       'test-every-5-seconds': {
+#       'report-every-morning': {
 #         'task': 'app.tasks.test_celery',
-#         'schedule': 5.0,
+#         'schedule': crontab(minute=0, hour=9),
 #         'args': (),
 #         'options': {
 #             'expires': 15.0, #  if it's not able to run this task within 15 seconds, to just cancel it
-#         },
+#         },  
 #     },
 # }

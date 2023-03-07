@@ -29,6 +29,7 @@ class TaskSerializer(serializers.ModelSerializer):
     created_by_account = serializers.ReadOnlyField(source="created_by.account")
     duration = serializers.SerializerMethodField(read_only=True)
     executor_ip = serializers.ReadOnlyField(source="executor.ip")
+    executor_hostname = serializers.ReadOnlyField(source="executor.hostname")
     executor_online = serializers.SerializerMethodField(read_only=True)
     target_name = serializers.ReadOnlyField(source="target.name")
 
