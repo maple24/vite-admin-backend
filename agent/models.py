@@ -221,6 +221,7 @@ class Task(models.Model):
         if not self.end_time:
             if self.timeDiff(datetime.datetime.now(), self.start_time.replace(tzinfo=None)) == 0: # start_time is from agent, convert it to UTC if 0 is got
                 return self.timeDiff(datetime.datetime.now(), (self.start_time.replace(tzinfo=None) - datetime.timedelta(hours=8)))
+            return self.timeDiff(datetime.datetime.now(), self.start_time.replace(tzinfo=None))
         return self.timeDiff(self.end_time, self.start_time)
 
     @staticmethod
