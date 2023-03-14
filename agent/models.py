@@ -64,11 +64,22 @@ class Executor(models.Model):
                 record.save()
 
 
-class Target(models.Model):
+class Device(models.Model):
     name = models.CharField(max_length=128)
-    # executor = models.ForeignKey(Executor, on_delete=models.CASCADE) # should be a manytomany field
     comments = models.CharField(max_length=256, null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
+class Target(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, null=True, blank=True)
+    executor = models.ForeignKey(Executor, on_delete=models.CASCADE, null=True, blank=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ["device", "executor"]
 
     def is_idling(self):
         running = Task.objects.filter(target=self, is_deleted=False, status__in=Task.StatusChoices._pub_running_status)
@@ -77,9 +88,9 @@ class Target(models.Model):
     @property
     def status(self):
         return 'Idling' if self.is_idling() else 'Busy'
-
-    def __str__(self):
-        return self.name
+    
+    def __str__(self) -> str:
+        return self.device.name + "/" + self.executor.name
 
 
 class Task(models.Model):

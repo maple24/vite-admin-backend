@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Executor, Task, Target
-from .serializers import ExecutorSerializer, TaskSerializer, TargetSerializer
+from .models import Executor, Task, Target, Device
+from .serializers import ExecutorSerializer, TaskSerializer, TargetSerializer, DeviceSerializer
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, permission_classes
@@ -81,6 +81,14 @@ class ExecutorViewSet(viewsets.ModelViewSet):
 class TargetViewSet(viewsets.ModelViewSet):
     queryset = Target.objects.all()
     serializer_class = TargetSerializer
+    filter_backends = [DjangoFilterBackend]
+    ordering_fields = '__all__'
+    filterset_fields = '__all__'
+
+
+class DeviceViewSet(viewsets.ModelViewSet):
+    queryset = Device.objects.all()
+    serializer_class = DeviceSerializer
 
     
 class TaskViewSet(viewsets.ModelViewSet):

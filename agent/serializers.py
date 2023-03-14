@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Executor, Task, Target
+from .models import Executor, Task, Target, Device
 
 
 class ExecutorSerializer(serializers.ModelSerializer):
@@ -18,9 +18,21 @@ class ExecutorSerializer(serializers.ModelSerializer):
 
 
 class TargetSerializer(serializers.ModelSerializer):
+    device_name = serializers.ReadOnlyField(source="device.name")
+    status = serializers.SerializerMethodField(read_only=True)
+    
+    def get_status(self, obj):
+        return obj.status
 
     class Meta:
         model = Target
+        fields = '__all__'
+        
+
+class DeviceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Device
         fields = '__all__'
 
 
