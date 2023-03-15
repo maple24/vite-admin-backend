@@ -19,6 +19,7 @@ class ExecutorSerializer(serializers.ModelSerializer):
 
 class TargetSerializer(serializers.ModelSerializer):
     device_name = serializers.ReadOnlyField(source="device.name")
+    executor_name = serializers.ReadOnlyField(source="executor.name")
     status = serializers.SerializerMethodField(read_only=True)
     
     def get_status(self, obj):

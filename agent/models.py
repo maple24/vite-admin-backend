@@ -65,8 +65,19 @@ class Executor(models.Model):
 
 
 class Device(models.Model):
+
+    class TypeChoice(models.TextChoices):
+        Machine = 'Machine'
+        WEBCAMERA = 'Web Camera'
+        DAQ = 'Data Acquisition Device'
+        SWITCHBOX = 'Switch Box'
+        DHU = 'Digital Cockpit Head Unit'
+        PHONE = 'Phone'
+        OTHERS = 'Others'
+        
     name = models.CharField(max_length=128)
     comments = models.CharField(max_length=256, null=True, blank=True)
+    type = models.CharField(max_length=64, null=True, blank=True, choices=TypeChoice.choices)
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
