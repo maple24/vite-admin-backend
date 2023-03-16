@@ -81,7 +81,7 @@ class ExecutorViewSet(viewsets.ModelViewSet):
 class TargetViewSet(viewsets.ModelViewSet):
     queryset = Target.objects.all()
     serializer_class = TargetSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = '__all__'
     filterset_fields = '__all__'
 
