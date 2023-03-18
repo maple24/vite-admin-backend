@@ -315,9 +315,9 @@ class Task(models.Model):
                 task_id=self.id
                 )
             producer.send_msg(topic, message, key="task")
-            self.status = Task.StatusChoices.CANCELED
-            self.reason = 'Task terminated by user.'
-            self.save()
+            # self.status = Task.StatusChoices.CANCELED
+            # self.reason = 'Task terminated by user.'
+            # self.save()
             return True
         return "Current task status is not allowed terminating!"
         
