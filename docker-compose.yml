@@ -17,7 +17,7 @@ services:
   backend:
     restart: always
     build: .
-    # command: daphne core.asgi:application -b 0.0.0.0 -p 8000
+    command: uvicorn backendviteadmin.asgi:application --host 0.0.0.0 --port 8000
     container_name: backend
     volumes:
       - ./:/backend/
