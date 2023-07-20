@@ -2,7 +2,7 @@ version: '3'
 
 services:
   db:
-    image: mysql:8
+    image: mysql
     ports:
       - "3306:3306"
     environment:
@@ -86,7 +86,7 @@ services:
       - backend
 
   redis:
-    image: redis
+    image: redis:7
     restart: always
     container_name: redis
     ports:
