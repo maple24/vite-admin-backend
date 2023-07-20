@@ -22,7 +22,7 @@ services:
     volumes:
       - ./:/backend/
     ports:
-      - 8000:8000
+      - 9000:9000
     environment:
       - REDIS_SERVER_HOST=redis
       - REDIS_SERVER_PORT=6379
@@ -81,7 +81,7 @@ services:
     build: ../vite-admin/
     container_name: frontend
     ports:
-      - 8080:80
+      - 9090:9090
     depends_on:
       - backend
 
@@ -124,7 +124,7 @@ services:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
     ports:
-      - "9090:8080"
+      - "9091:9091"
     restart: always
     environment:
       KAFKA_CLUSTERS_0_NAME: kafka
