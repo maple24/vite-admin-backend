@@ -124,7 +124,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('MYSQL_DATABASE', 'viteadmin'),
         'USER': os.environ.get('MYSQL_USER', 'root'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'adminadmin'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'root'),
         'HOST': os.environ.get('MYSQL_SERVER_HOST', 'localhost'),
         'PORT': os.environ.get('MYSQL_SERVER_PORT', 3306),
     }
