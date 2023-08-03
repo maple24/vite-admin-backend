@@ -56,8 +56,9 @@ class Executor(models.Model):
         check and remove invalid tasks, eg. lost heartbeat when running
         '''
         running_records = Task.objects.filter(executor=self, is_deleted=False, status__in=Task.StatusChoices._running_status)
+        ids = [task.get("task_id") for task in task_list]
         for record in running_records:
-            if record.id not in task_list:
+            if record.id not in ids:
                 record.status = Task.StatusChoices.ERROR
                 record.end_time = datetime.datetime.now()
                 record.reason = 'Lost heartbeat.'
